@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastrar Console</title>
+    <link href="../../node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/estilo.css" rel="stylesheet">
+</head>
+<body class="p-4 bg-light">
+    <h4 class="mb-3 text-primary">Cadastrar Console</h4>
+
+    <form id="formConsole">
+        <div class="mb-3">
+            <label for="titulo" class="form-label">Título</label>
+            <input type="text" id="titulo" name="titulo" class="form-control" maxlength="100" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="empresa" class="form-label">Empresa</label>
+            <input type="text" id="empresa" name="empresa" class="form-control" maxlength="100" placeholder="Ex: Sony" required>
+        </div>
+
+        <div class="mb-4">
+            <label for="ano_lancamento" class="form-label">Ano de Lançamento</label>
+            <input type="number" id="ano_lancamento" name="ano_lancamento" class="form-control" min="1970" max="2100" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 fw-bold">Salvar</button>
+    </form>
+
+    <script src="js/frmConsole.js"></script>
+</body>
+</html>
