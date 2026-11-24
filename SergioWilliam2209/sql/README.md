@@ -82,3 +82,24 @@ A procedure valida cabeçalho/array, inicia transação, grava cabeçalho e iten
 O uso de JSON requer suporte nativo ao tipo e às funções JSON; a proposta documenta MySQL 5.7.8+ como piso de referência, não como versão confirmada do servidor escolar. Não usa `JSON_TABLE`. O script segue `DELIMITER $$`, compatível com o pré-processamento observado no inicializador, mas ainda não está na lista de módulos. Não contém `DROP PROCEDURE` e não é reexecutável se já instalada; integração deve ser controlada. O `ProcedureExecutor` usa conexão compartilhada e não oferece API transacional: é necessário validar no executor real que a chamada não participa de transação externa e que o gerenciamento de sessão/concor­rência é seguro.
 
 Não foi executado nem validado em MySQL. Em ambiente descartável, verificar sintaxe na versão alvo, JSON inválido/malformado e limites, strings decimais (inclusive escala excedente, expoente, sinal e overflow), moeda inválida/divergente, material inexistente/inativo, snapshots, retorno único, e especialmente rollback após falha em item posterior. Testes concorrentes devem confirmar o bloqueio e o comportamento com desativação de material. Os contratos TypeScript continuam sem alteração: data/moeda/itens são opcionais no input apesar de serem obrigatórios no SQL; `description` não tem coluna, `unit` é derivada do material, cotação não é enviada e o resultado ID exige leitura posterior para produzir o DTO.
+
+## Atualização parcial preliminar de compra e itens
+
+`005_procedure_atualizar_compra.sql` propõe `sp_atualizar_compra_com_itens(p_id, p_cabecalho, p_itens)`. O cabeçalho JSON é um patch: `data_compra` deve ser uma string `YYYY-MM-DD` válida; `observacoes` aceita string (vazia normaliza para `NULL`) ou JSON `null` para limpar. Campo omitido permanece inalterado. Moeda e cotação não são atualizadas.
+
+`p_itens` é uma lista de operações (máximo provisório de 100; array vazio é permitido):
+
+```json
+[
+  { "id": 21, "quantidade": "2.500", "preco_unitario": "18.7500" },
+  { "material_id": 12, "quantidade": "1", "preco_unitario": "4.2500", "moeda": "BRL" }
+]
+```
+
+Objeto com `id` atualiza somente quantidade/preço de item que pertença à compra; material e snapshots existentes não mudam. Objeto sem `id` cria item, exige material ativo e moeda igual à compra e obtém nome/unidade do catálogo sob bloqueio. IDs repetidos são rejeitados. Itens não enviados permanecem. Não há operação de remoção. O resultado é um conjunto com `id`; o repositório poderá consultar o detalhe após a chamada.
+
+Cabeçalho, atualizações e inclusões são envoltos em transação com bloqueio da compra; itens e materiais são bloqueados nas operações pertinentes. Handler SQL executa rollback e relança erro. As decimais são strings e passam por validação de formato, precisão e escala antes do CAST para os tipos DECIMAL existentes. O bloqueio da compra serializa esta procedure para a mesma compra, mas ainda há risco de deadlock com outras rotinas que adquiram locks em ordem diferente; não existe retry automático nem controle otimista/versionamento.
+
+O script usa JSON, `JSON_CONTAINS_PATH`, `JSON_EXTRACT`, `JSON_TYPE`, `STR_TO_DATE`, regex e `SIGNAL/RESIGNAL`; a referência mínima documentada para recursos JSON é MySQL 5.7.8+, mas compatibilidade da assinatura e funções nesta versão ainda precisa de teste. O inicializador coletivo remove `DELIMITER $$` e substitui `$$`, porém não inclui scripts individuais. O arquivo não contém `DROP` e não é reexecutável se a procedure já existir.
+
+Os contratos TypeScript permanecem sem alteração. `UpdatePurchaseInput` é parcial e deverá ser serializado preservando campo omitido versus `null`; a porta não define o formato JSON nem remoção. O campo `description` não tem coluna. Testar em MySQL descartável sintaxe/runner, patches omitidos e nulos, data inválida, IDs duplicados e de outra compra, decimais inválidas/limites, material inativo, rollback após uma operação anterior, locks concorrentes e retorno único. Nenhum desses comportamentos foi executado nesta etapa.
