@@ -59,3 +59,26 @@ O detalhe inclui os snapshots de nome/unidade do item e `preco_unitario`/`quanti
 Assim como o script de materiais, este arquivo usa `DELIMITER $$`, removido pelo pré-processamento do inicializador observado em `sql/init-db.js`; esse inicializador não inclui a pasta individual. Não há `DROP PROCEDURE`, portanto o arquivo não é reexecutável se as procedures já existirem. A inclusão precisa ser controlada e aprovada; não executar diretamente pelo driver sem pré-processamento.
 
 Não houve execução nem validação em MySQL. Antes da integração, testar em banco descartável: filtros nenhum/inicial/final/combinados, intervalo invertido, IDs inválidos/inexistentes, compra com zero/um/vários itens, snapshots nulos/preenchidos, ordenação e extração do único conjunto pelo executor real. Fornecedor, DTOs de cotação, nulabilidade/cardinalidade de itens e o mapeamento de resultados permanecem pendentes de aprovação coletiva.
+
+## Criação transacional preliminar de compras
+
+`004_procedure_criar_compra.sql` propõe somente `sp_criar_compra_com_itens(p_data_compra, p_moeda, p_observacoes, p_itens)`. `p_itens` é um array JSON de 1 a 100 objetos (limite máximo provisório), por exemplo:
+
+```json
+[
+  {
+    "material_id": 12,
+    "quantidade": "2.500",
+    "preco_unitario": "18.7500",
+    "moeda": "BRL"
+  }
+]
+```
+
+Material deve ser ativo; nome e unidade dos snapshots são lidos do cadastro sob `FOR UPDATE`, nunca aceitos do cliente. Quantidade/preço devem ser strings decimais em formato fixo, sem sinal/expoente, com no máximo 3/4 casas e limites inteiros de `DECIMAL(12,3)`/`DECIMAL(15,4)`. Quantidade deve ser positiva; preço pode ser zero. A moeda informada por item deve corresponder ao cabeçalho. Moeda de cotação fica `NULL`; fornecedor não é persistido. O resultado é um único conjunto contendo `id`; o futuro repositório deverá consultar o detalhe para formar `PurchaseDto`.
+
+A procedure valida cabeçalho/array, inicia transação, grava cabeçalho e itens, e confirma somente ao final. Handler `SQLEXCEPTION` executa `ROLLBACK` e `RESIGNAL`; falha em qualquer item deve reverter toda a escrita. A leitura bloqueante do material reduz a corrida com desativação concorrente. O limite de 100 itens e as regras de material ativo/moeda comum são hipóteses de protótipo, pendentes de aprovação coletiva.
+
+O uso de JSON requer suporte nativo ao tipo e às funções JSON; a proposta documenta MySQL 5.7.8+ como piso de referência, não como versão confirmada do servidor escolar. Não usa `JSON_TABLE`. O script segue `DELIMITER $$`, compatível com o pré-processamento observado no inicializador, mas ainda não está na lista de módulos. Não contém `DROP PROCEDURE` e não é reexecutável se já instalada; integração deve ser controlada. O `ProcedureExecutor` usa conexão compartilhada e não oferece API transacional: é necessário validar no executor real que a chamada não participa de transação externa e que o gerenciamento de sessão/concor­rência é seguro.
+
+Não foi executado nem validado em MySQL. Em ambiente descartável, verificar sintaxe na versão alvo, JSON inválido/malformado e limites, strings decimais (inclusive escala excedente, expoente, sinal e overflow), moeda inválida/divergente, material inexistente/inativo, snapshots, retorno único, e especialmente rollback após falha em item posterior. Testes concorrentes devem confirmar o bloqueio e o comportamento com desativação de material. Os contratos TypeScript continuam sem alteração: data/moeda/itens são opcionais no input apesar de serem obrigatórios no SQL; `description` não tem coluna, `unit` é derivada do material, cotação não é enviada e o resultado ID exige leitura posterior para produzir o DTO.
