@@ -44,7 +44,8 @@ export interface AddressLookupError extends ContractError {
 
 /**
  * Separate methods prevent conflating Crispin's local MySQL lookup with a
- * possible external provider. Neither method is implemented in this activity.
+ * possible external provider. A local adapter may implement only `lookupLocal`;
+ * external lookup remains a separate, unimplemented integration.
  */
 export interface AddressLookupContract {
   lookupLocal(

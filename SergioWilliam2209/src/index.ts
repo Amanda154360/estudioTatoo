@@ -52,3 +52,7 @@ export type {
   AddressLookupSource,
   PostalCode,
 } from "./modules/addresses/contracts/address.contracts";
+export {
+  CrispinLocalCepAdapter,
+  type LocalCepLookupPort,
+} from "./modules/addresses/adapters/CrispinLocalCepAdapter";

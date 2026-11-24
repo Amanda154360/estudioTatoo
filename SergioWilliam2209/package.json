@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "check": "tsc -p tsconfig.json --noEmit"
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node dist/modules/addresses/adapters/CrispinLocalCepAdapter.spec.js"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
