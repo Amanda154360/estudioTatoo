@@ -1,0 +1,14 @@
+{
+  "name": "estudiotattoo-sergiowilliam2209-modules",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TypeScript modules for future integration into the estudioTatoo Electron application",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}
