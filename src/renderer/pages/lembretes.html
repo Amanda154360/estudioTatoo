@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' file:; script-src 'self' file:; style-src 'self' file: 'unsafe-inline'; img-src 'self' file: data:; object-src 'none'; base-uri 'none'; form-action 'self'"
+    />
+    <title>Lembretes de Atendimento</title>
+    <link href="../../../node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="../css/estilo.css" rel="stylesheet" />
+  </head>
+  <body class="bg-light">
+    <div class="container-fluid p-4">
+      <header class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+          <h3 class="mb-0">Lembretes de Atendimento</h3>
+          <small class="text-muted">
+            Aviso automático enviado 1 dia antes do atendimento (checagem a cada 5 minutos)
+          </small>
+        </div>
+        <div class="d-flex gap-2">
+          <button id="btnAtualizar" class="btn btn-outline-secondary" type="button">Atualizar</button>
+          <button id="btnGerar" class="btn btn-outline-primary" type="button">
+            Gerar pendentes
+          </button>
+          <button id="btnEnviar" class="btn btn-primary" type="button">Enviar pendentes</button>
+        </div>
+      </header>
+
+      <div id="areaAvisos"></div>
+      <div id="areaPreview"></div>
+
+      <div class="card mb-3 shadow-sm">
+        <div class="card-body row g-2 align-items-end">
+          <div class="col-md-4">
+            <label for="filtroStatus" class="form-label small fw-bold mb-1">Status</label>
+            <select id="filtroStatus" class="form-select">
+              <option value="">Todos os status</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Enviado">Enviado</option>
+              <option value="Falhou">Falhou</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div class="col-md-5">
+            <label for="campoAgendamento" class="form-label small fw-bold mb-1">
+              Criar lembrete manual para o agendamento nº
+            </label>
+            <input
+              id="campoAgendamento"
+              type="number"
+              min="1"
+              class="form-control"
+              placeholder="Ex.: 1"
+            />
+          </div>
+          <div class="col-md-3">
+            <button id="btnCriarManual" class="btn btn-outline-secondary w-100" type="button">
+              Criar lembrete manual
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">Fila de lembretes</h5>
+        <span id="contador" class="badge bg-secondary">0 lembrete(s)</span>
+      </div>
+
+      <div class="table-responsive shadow-sm rounded">
+        <table class="table table-striped table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Atendimento</th>
+              <th>Procedimento</th>
+              <th>Destinatário</th>
+              <th>Envio previsto</th>
+              <th>Status</th>
+              <th class="text-center">Tentativas</th>
+              <th class="text-center" style="width: 250px">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="corpoTabela">
+            <tr>
+              <td colspan="8" class="text-center text-muted">Carregando...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="lembretes.js"></script>
+  </body>
+</html>

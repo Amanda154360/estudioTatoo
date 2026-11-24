@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+*.log
+
+# Artefatos gerados pelo esbuild (fonte real: arquivos .ts ao lado)
+src/renderer/pages/*.js
+src/renderer/pages/*.js.map
+
+# Legado mantido apenas para consulta
+sql/legado/

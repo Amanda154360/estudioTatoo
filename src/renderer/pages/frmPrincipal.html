@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Estúdio Tattoo & Body Art - Painel de Controle</title>
+    <link
+      href="../../../node_modules/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link href="../css/estilo.css" rel="stylesheet" />
+    <style>
+      .badge-especialidade {
+        background-color: var(--cor-rosa);
+        color: var(--cor-escura);
+        font-weight: 600;
+      }
+      .badge-ativo {
+        background-color: #28a745;
+        color: #fff;
+      }
+      .badge-inativo {
+        background-color: #6c757d;
+        color: #fff;
+      }
+      .btn-sm-action {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body class="overflow-hidden bg-light">
+    <div class="container-fluid vh-100 d-flex p-0">
+      <!-- SIDEBAR -->
+      <div
+        class="bg-dark text-white p-3 d-flex flex-column shadow z-2"
+        style="width: 260px"
+      >
+        <div class="text-center mb-2">
+          <h4 class="text-success fw-bold mb-1">Estúdio Tattoo</h4>
+          <small class="text-white-50">Tatuagem • Piercing • Estética</small>
+        </div>
+        <hr />
+        
+        <div class="d-grid gap-2 mb-4">
+          <button class="btn btn-primary fw-bold" id="btnMenuNovoCliente">
+            + Novo Cliente
+          </button>
+          <button class="btn btn-primary fw-bold" id="btnMenuNovoProfissional">
+            + Novo Profissional
+          </button>
+        </div>
+      </div>
+
+      <!-- MAIN CONTENT -->
+      <div class="flex-grow-1 d-flex flex-column bg-light">
+        <!-- HEADER -->
+        <header
+          class="bg-white border-bottom p-3 d-flex justify-content-between align-items-center shadow-sm z-1"
+        >
+          <div>
+            <h4 class="m-0 text-secondary fw-bold">Painel de Gestão & Cadastros</h4>
+            <small class="text-muted">Busca integrada de CEP e profissionais especialistas</small>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-secondary p-2">SQL Engine: Ativo</span>
+            <button class="btn btn-sm btn-outline-secondary" id="btnRecarregarTudo" title="Recarregar dados do banco">
+              Atualizar
+            </button>
+          </div>
+        </header>
+
+        <main class="flex-grow-1 overflow-auto p-4">
+          <!-- BARRA DE PESQUISA INTEGRADA (SQL) -->
+          <div class="card p-3 mb-4 shadow-sm border-1">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-6">
+                <label for="inputBuscaCliente" class="form-label small fw-bold mb-1">
+                  Buscar Clientes (Nome, CPF, Telefone ou CEP via SQL):
+                </label>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    id="inputBuscaCliente"
+                    class="form-control"
+                    placeholder="Digite o CEP (ex: 01310-100), nome ou CPF..."
+                  />
+                  <button class="btn btn-primary" id="btnBuscarCliente">
+                    Buscar
+                  </button>
+                  <button class="btn btn-outline-secondary" id="btnLimparBuscaCliente">
+                    Limpar
+                  </button>
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label for="selectFiltroEspecialidade" class="form-label small fw-bold mb-1">
+                  Filtrar Profissionais por Especialidade:
+                </label>
+                <select id="selectFiltroEspecialidade" class="form-select">
+                  <option value="">Todas as especialidades</option>
+                  <option value="Tatuador">Tatuadores</option>
+                  <option value="Body Piercer">Body Piercers</option>
+                  <option value="Esteticista">Esteticistas</option>
+                  <option value="Micropigmentador">Micropigmentadores</option>
+                </select>
+              </div>
+
+              <div class="col-md-2 text-end pt-3">
+                <small id="statusCarregamento" class="text-muted"></small>
+              </div>
+            </div>
+          </div>
+
+          <!-- TABELA DE CLIENTES -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="m-0 fw-bold text-secondary">Clientes Cadastrados</h5>
+            <span id="contadorClientes" class="badge bg-secondary">0 clientes</span>
+          </div>
+
+          <div class="table-responsive shadow-sm rounded mb-4">
+            <table class="table table-striped table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Telefone / WhatsApp</th>
+                  <th>CPF</th>
+                  <th>CEP</th>
+                  <th>Endereço</th>
+                  <th>Cidade/UF</th>
+                  <th class="text-center" style="width: 190px">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyClientes">
+                <tr><td colspan="7" class="text-center text-muted">Carregando clientes...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TABELA DE PROFISSIONAIS -->
+          <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+            <h5 class="m-0 fw-bold text-secondary">Profissionais do Estúdio</h5>
+            <span id="contadorProfissionais" class="badge bg-secondary">0 profissionais</span>
+          </div>
+
+          <div class="table-responsive shadow-sm rounded mb-4">
+            <table class="table table-striped table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Nome do Profissional</th>
+                  <th>Especialidade</th>
+                  <th>Telefone</th>
+                  <th>E-mail</th>
+                  <th>Comissão</th>
+                  <th>Status</th>
+                  <th class="text-center" style="width: 150px">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyProfissionais">
+                <tr><td colspan="7" class="text-center text-muted">Carregando profissionais...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- MODAL CONFIRMAR EXCLUSÃO CLIENTE -->
+    <div class="modal fade" id="modalConfirmarExclusaoCliente" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirmar Exclusão de Cliente</h5>
+          </div>
+          <div class="modal-body">
+            <p>
+              Tem certeza que deseja excluir o(a) cliente
+              <strong id="nomeClienteExcluir"></strong>?
+              <br />
+              <small class="text-muted">A exclusão será processada diretamente no banco de dados SQL via Stored Procedure.</small>
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">
+              Cancelar
+            </button>
+            <button class="btn btn-danger" id="btnConfirmarExclusaoCliente">
+              Excluir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL CONFIRMAR EXCLUSÃO PROFISSIONAL -->
+    <div class="modal fade" id="modalConfirmarExclusaoProfissional" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirmar Exclusão de Profissional</h5>
+          </div>
+          <div class="modal-body">
+            <p>
+              Tem certeza que deseja excluir o(a) profissional
+              <strong id="nomeProfissionalExcluir"></strong>?
+              <br />
+              <small class="text-muted">Esta ação não poderá ser desfeita.</small>
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">
+              Cancelar
+            </button>
+            <button class="btn btn-danger" id="btnConfirmarExclusaoProfissional">
+              Excluir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DETALHES / ANAMNESE DO CLIENTE -->
+    <div class="modal fade" id="modalDetalhesCliente" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Ficha Cadastral e Anamnese</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body" id="corpoDetalhesCliente">
+            <!-- Preenchido dinamicamente -->
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils/formatters.js"></script>
+    <script src="../js/frmPrincipal.js"></script>
+  </body>
+</html>
