@@ -56,3 +56,9 @@ export {
   CrispinLocalCepAdapter,
   type LocalCepLookupPort,
 } from "./modules/addresses/adapters/CrispinLocalCepAdapter";
+export type { MaterialRepositoryPort } from "./modules/materials/infrastructure/MaterialRepositoryPort";
+export type { PurchaseRepositoryPort } from "./modules/purchases/infrastructure/PurchaseRepositoryPort";
+export type {
+  ProcedureExecutorPort,
+  ProcedureRow,
+} from "./modules/persistence/contracts/ProcedureExecutorPort";
