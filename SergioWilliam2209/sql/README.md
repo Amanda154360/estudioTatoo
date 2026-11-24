@@ -46,3 +46,16 @@ Antes de qualquer aplicação, revisar versão do MySQL, compatibilidade de `DAT
 O arquivo usa `DELIMITER $$` e `END$$`, sintaxe compatível com o pré-processamento observado em `sql/init-db.js`, que remove as diretivas `DELIMITER` e troca `$$` por `;`. Contudo, ele não é incluído pela lista fixa do inicializador. Não há `DROP PROCEDURE IF EXISTS`: o arquivo **não é reexecutável** após as procedures serem criadas. A integração deve ocorrer uma única vez por migração controlada, com verificação de existência e versão; não executar diretamente pelo driver sem o pré-processamento apropriado. O script não altera nem substitui procedures existentes.
 
 Não foi validado em MySQL. Antes da integração, testar criação pelo runner real em banco descartável, chamadas e formatos de retorno, validações, material inexistente, exclusão repetida e preservação das linhas referenciadas por `itens_compra`. O esquema e essas regras seguem provisórios, pendentes de aprovação coletiva.
+
+## Procedures preliminares de consulta de compras
+
+`003_procedures_compras.sql` contém somente:
+
+- `sp_listar_compras(p_data_inicial, p_data_final)`: filtros de data opcionais, valida intervalo invertido, retorna uma linha por compra e ordena por `data_compra DESC, id DESC`. Não consulta itens nem filtra fornecedor.
+- `sp_buscar_compra_por_id(p_id)`: valida ID e retorna cabeçalho com zero ou mais itens em um único conjunto, via `LEFT JOIN`. Aliases `compra_*` e `item_*` distinguem as colunas. Se a compra existe sem itens, há uma linha com `item_id` e colunas do item `NULL`; se não existe, retorna zero linhas. Itens ordenados por ID crescente.
+
+O detalhe inclui os snapshots de nome/unidade do item e `preco_unitario`/`quantidade` em suas colunas `DECIMAL`; o mapeamento TypeScript deve preservá-los como texto decimal, sem coerção para ponto flutuante. O cabeçalho SQL retorna cotação histórica, mas `PurchaseDto` não possui esses campos. `supplierId` também não pode ser retornado nem filtrado: não há coluna ou relação de fornecedor no esquema. Os aliases do resultado detalhado não são diretamente os nomes dos DTOs; um futuro repositório deverá agrupar linhas por `compra_id` e mapear os aliases, convertendo a linha sem item em `items: []` (ou na representação coletiva aprovada).
+
+Assim como o script de materiais, este arquivo usa `DELIMITER $$`, removido pelo pré-processamento do inicializador observado em `sql/init-db.js`; esse inicializador não inclui a pasta individual. Não há `DROP PROCEDURE`, portanto o arquivo não é reexecutável se as procedures já existirem. A inclusão precisa ser controlada e aprovada; não executar diretamente pelo driver sem pré-processamento.
+
+Não houve execução nem validação em MySQL. Antes da integração, testar em banco descartável: filtros nenhum/inicial/final/combinados, intervalo invertido, IDs inválidos/inexistentes, compra com zero/um/vários itens, snapshots nulos/preenchidos, ordenação e extração do único conjunto pelo executor real. Fornecedor, DTOs de cotação, nulabilidade/cardinalidade de itens e o mapeamento de resultados permanecem pendentes de aprovação coletiva.
