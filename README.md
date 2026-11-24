@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Estúdio Tattoo — Procedimentos e Lembretes
 
 Sistema desktop (Electron + TypeScript + MySQL 8.0) para gestão de um estúdio de
@@ -130,3 +131,6 @@ sem mudar comportamento.
 5. **Enviar pendentes** → status vira `Enviado` e aparece o link do Ethereal.
 6. `SELECT * FROM vw_lembretes_detalhados;` confere o vínculo com cliente,
    serviço, profissional e agendamento.
+=======
+# estudioTatoo
+>>>>>>> 6d690dcc6fbaac243d033c792008c6f897130739
