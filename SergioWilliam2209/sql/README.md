@@ -31,3 +31,18 @@ Os campos de cotação são opcionais no cabeçalho da compra para preservar tax
 O inicializador coletivo mantém uma lista fixa em `sql/init-db.js`; esta pasta individual não é aplicada automaticamente. A integração futura deve ser acordada com Amanda e incluir migração revisada no fluxo compartilhado. O inicializador atual reexecuta módulos e há scripts existentes com `DROP TABLE`; não o use como mecanismo de upgrade desta proposta.
 
 Antes de qualquer aplicação, revisar versão do MySQL, compatibilidade de `DATETIME(3)` e precisão decimal, testar em banco descartável e planejar backup. Não executar este rascunho em banco compartilhado sem aprovação explícita.
+
+## Procedures preliminares de materiais
+
+`002_procedures_materiais.sql` propõe `sp_listar_materiais`, `sp_buscar_material_por_id`, `sp_cadastrar_material`, `sp_atualizar_material` e `sp_excluir_material`. Cada chamada emite no máximo um conjunto de linhas, formato consumido pelo `ProcedureExecutor` compartilhado.
+
+- A listagem aplica busca opcional em nome/descrição, retorna somente ativos e ordena por nome e ID.
+- A busca por ID inclui registros ativos e inativos.
+- Cadastro retorna a linha criada; atualização valida existência e retorna a linha persistida, mesmo quando não houve mudança de valores.
+- Exclusão é somente lógica (`ativo = 0`), não apaga linhas nem o histórico. Repeti-la retorna o estado inativo. Reativação não está incluída.
+- Erros de validação e IDs inválidos/inexistentes usam `SIGNAL SQLSTATE '45000'` com mensagens de domínio sem detalhes de SQL.
+- Resultados incluem `ativo`, embora `MaterialDto` não o modele. Até que o grupo aprove uma mudança contratual, o repositório deve validar/mapear os campos necessários ao DTO e não presumir que o DTO expõe o estado ativo. A listagem filtra inativos; a busca por ID inclui ambos.
+
+O arquivo usa `DELIMITER $$` e `END$$`, sintaxe compatível com o pré-processamento observado em `sql/init-db.js`, que remove as diretivas `DELIMITER` e troca `$$` por `;`. Contudo, ele não é incluído pela lista fixa do inicializador. Não há `DROP PROCEDURE IF EXISTS`: o arquivo **não é reexecutável** após as procedures serem criadas. A integração deve ocorrer uma única vez por migração controlada, com verificação de existência e versão; não executar diretamente pelo driver sem o pré-processamento apropriado. O script não altera nem substitui procedures existentes.
+
+Não foi validado em MySQL. Antes da integração, testar criação pelo runner real em banco descartável, chamadas e formatos de retorno, validações, material inexistente, exclusão repetida e preservação das linhas referenciadas por `itens_compra`. O esquema e essas regras seguem provisórios, pendentes de aprovação coletiva.
