@@ -34,7 +34,7 @@ document.querySelector("#btnBuscarCep").addEventListener("click", () => {
   }
 });
 
-// Função centralizada para consultar o CEP no banco SQL via Stored Procedure
+// Consulta o catálogo local e, quando o CEP não está cadastrado, usa ViaCEP.
 async function executarBuscaCepSql(cep) {
   feedbackCep.textContent = "Buscando no banco SQL...";
   feedbackCep.className = "text-primary small";
@@ -47,7 +47,7 @@ async function executarBuscaCepSql(cep) {
       document.querySelector("#cidade").value = dadosCep.cidade;
       document.querySelector("#estado").value = dadosCep.estado;
 
-      feedbackCep.textContent = "CEP encontrado no banco SQL!";
+      feedbackCep.textContent = "Endereço encontrado para o CEP.";
       feedbackCep.className = "text-success small fw-bold";
       document.querySelector("#numero").focus();
     } else {
@@ -56,7 +56,7 @@ async function executarBuscaCepSql(cep) {
     }
   } catch (erro) {
     console.error("Erro ao buscar CEP no SQL:", erro);
-    feedbackCep.textContent = "Erro na consulta do CEP no banco de dados.";
+    feedbackCep.textContent = "Consulta de CEP indisponível. Verifique a conexão e tente novamente.";
     feedbackCep.className = "text-danger small";
   }
 }

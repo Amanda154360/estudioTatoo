@@ -1,6 +1,7 @@
 import type { Material } from '../../shared/contracts/material';
 import type { CompraDetalhada, CriarCompra } from '../../shared/contracts/compra';
 import type { ItemCompraInput } from '../../shared/contracts/compra';
+import type { ExchangeRateSide } from '../../../SergioWilliam2209/src/modules/exchange-rates/contracts/exchange-rate.contracts';
 import {
   criarBotao,
   criarCelula,
@@ -29,6 +30,9 @@ const listaItens = exigirElemento<HTMLUListElement>('#listaItensNovos');
 const selectMaterial = exigirElemento<HTMLSelectElement>('#campoMaterial');
 const btnSalvar = exigirElemento<HTMLButtonElement>('#btnSalvar');
 const campoMoeda = exigirElemento<HTMLInputElement>('#campoMoeda');
+const estadoCotacao = exigirElemento<HTMLDivElement>('#estadoCotacao');
+const resultadoCotacao = exigirElemento<HTMLDivElement>('#resultadoCotacao');
+const btnConsultarCotacao = exigirElemento<HTMLButtonElement>('#btnConsultarCotacao');
 
 async function carregar(): Promise<void> {
   try {
@@ -147,6 +151,39 @@ function dataLocalHoje(): string {
   return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
 }
 
+async function consultarCotacao(): Promise<void> {
+  btnConsultarCotacao.disabled = true;
+  resultadoCotacao.replaceChildren();
+  estadoCotacao.textContent = 'Consultando o Banco Central...';
+  try {
+    const lados: readonly ExchangeRateSide[] = ['buy', 'sell'];
+    const resultados = await Promise.all(
+      lados.map((lado) => window.api.consultarCotacaoDolar(lado)),
+    );
+    for (let index = 0; index < resultados.length; index += 1) {
+      const resultado = resultados[index]!;
+      const linha = document.createElement('div');
+      if (resultado.ok) {
+        const quote = resultado.value;
+        linha.textContent =
+          `${lados[index] === 'buy' ? 'Compra' : 'Venda'}: R$ ${quote.rate} · ` +
+          `data ${quote.effectiveDate} · origem ${quote.source}`;
+      } else {
+        linha.textContent =
+          `${lados[index] === 'buy' ? 'Compra' : 'Venda'}: indisponível — ${resultado.error.message}`;
+        linha.className = 'text-danger';
+      }
+      resultadoCotacao.append(linha);
+    }
+    estadoCotacao.textContent = 'Valores informativos; não alteram nem são armazenados na compra.';
+  } catch {
+    estadoCotacao.textContent = 'Não foi possível consultar a cotação. Verifique a conexão e tente novamente.';
+    estadoCotacao.className = 'small text-danger';
+  } finally {
+    btnConsultarCotacao.disabled = false;
+  }
+}
+
 async function abrirCompra(id: number): Promise<void> {
   try {
     const compra = await window.api.buscarCompra(id);
@@ -221,5 +258,6 @@ exigirElemento<HTMLButtonElement>('#btnAdicionarItem').addEventListener('click',
 exigirElemento<HTMLButtonElement>('#btnAtualizar').addEventListener('click', () => void carregar());
 exigirElemento<HTMLButtonElement>('#btnFiltrar').addEventListener('click', () => void carregar());
 campoMoeda.addEventListener('input', renderizarItensNovos);
+btnConsultarCotacao.addEventListener('click', () => void consultarCotacao());
 
 void carregar();

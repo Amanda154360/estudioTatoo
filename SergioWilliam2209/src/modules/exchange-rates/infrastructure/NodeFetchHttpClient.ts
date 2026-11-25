@@ -41,7 +41,7 @@ const SAFE_MESSAGES: Record<NodeFetchHttpClientErrorCode, string> = {
 
 /** Errors contain only safe categories/messages, never URL or response contents. */
 export class NodeFetchHttpClientError extends HttpClientError {
-  constructor(readonly code: NodeFetchHttpClientErrorCode) {
+  constructor(override readonly code: NodeFetchHttpClientErrorCode) {
     super(code, SAFE_MESSAGES[code]);
     this.name = "NodeFetchHttpClientError";
   }

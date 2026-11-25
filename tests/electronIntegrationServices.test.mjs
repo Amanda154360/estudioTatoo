@@ -3,10 +3,14 @@ import test from 'node:test';
 import materialApplicationModule from '../dist/integration-tests/src/main/application/MaterialApplicationService.js';
 import compraApplicationModule from '../dist/integration-tests/src/main/application/CompraApplicationService.js';
 import erroBancoModule from '../dist/integration-tests/src/main/infra/database/ErroBanco.js';
+import cotacaoModule from '../dist/integration-tests/src/main/application/CotacaoDolarApplicationService.js';
+import cepModule from '../dist/integration-tests/src/main/application/CepLookupApplicationService.js';
 
 const { MaterialApplicationService } = materialApplicationModule;
 const { CompraApplicationService } = compraApplicationModule;
 const { ErroBanco } = erroBancoModule;
+const { CotacaoDolarApplicationService } = cotacaoModule;
+const { CepLookupApplicationService } = cepModule;
 
 test('serviço de materiais delega listagem, consulta, escrita e desativação', async () => {
   const calls = [];
@@ -96,4 +100,81 @@ test('erro de estrutura individual ausente é claro e não tenta migrar', () => 
   });
   assert.match(error.message, /migração individual aprovada/);
   assert.match(error.message, /não cria a estrutura automaticamente/);
+});
+
+test('consulta PTAX encaminha USD/BRL e lado, sem persistência', async () => {
+  const calls = [];
+  const fake = {
+    getQuote: async (query) => {
+      calls.push(query);
+      return {
+        ok: true,
+        value: {
+          baseCurrency: 'USD',
+          quoteCurrency: 'BRL',
+          side: query.side,
+          rate: '5.1234',
+          source: 'BCB_PTAX',
+          effectiveDate: '2026-11-24',
+          quotedAt: '2026-11-24 13:00:00',
+          retrievedAt: '2026-11-25T10:00:00.000Z',
+        },
+      };
+    },
+  };
+  const service = new CotacaoDolarApplicationService(fake);
+  const result = await service.consultar('sell');
+  assert.equal(result.ok, true);
+  assert.equal(result.value.source, 'BCB_PTAX');
+  assert.deepEqual(calls, [{
+    baseCurrency: 'USD',
+    quoteCurrency: 'BRL',
+    side: 'sell',
+  }]);
+});
+
+test('CEP usa catálogo local primeiro e ViaCEP somente como fallback', async () => {
+  const calls = [];
+  const local = {
+    buscarCepSql: async (cep) => {
+      calls.push(`local:${cep}`);
+      return null;
+    },
+  };
+  const viaCep = {
+    consultarPorCep: async (cep) => {
+      calls.push(`viacep:${cep}`);
+      return {
+        status: 200,
+        body: {
+          cep: '01001-000',
+          logradouro: 'Praça da Sé',
+          bairro: 'Sé',
+          localidade: 'São Paulo',
+          uf: 'SP',
+          ibge: '3550308',
+        },
+      };
+    },
+  };
+  const service = new CepLookupApplicationService(local, viaCep);
+  const result = await service.consultar('01001-000');
+  assert.deepEqual(calls, ['local:01001000', 'viacep:01001000']);
+  assert.equal(result.cidade, 'São Paulo');
+  assert.equal(result.cep, '01001000');
+});
+
+test('CEP devolve mensagem segura quando o ViaCEP fica indisponível', async () => {
+  const service = new CepLookupApplicationService(
+    { buscarCepSql: async () => null },
+    { consultarPorCep: async () => { throw new Error('detalhe interno do transporte'); } },
+  );
+  await assert.rejects(
+    service.consultar('01001000'),
+    (error) => {
+      assert.match(error.message, /fonte de consulta de CEP está indisponível/i);
+      assert.doesNotMatch(error.message, /detalhe interno/);
+      return true;
+    },
+  );
 });

@@ -22,6 +22,10 @@ import type {
   CriarCompra,
   FiltroCompras,
 } from './compra';
+import type {
+  ExchangeRateSide,
+  ExchangeRateQuote,
+} from '../../../SergioWilliam2209/src/modules/exchange-rates/contracts/exchange-rate.contracts';
 
 /** Contrato único entre o processo principal e o renderer. */
 export const CANAIS = {
@@ -49,6 +53,8 @@ export const CANAIS = {
   compraBuscar: 'compra:buscar',
   compraCriar: 'compra:criar',
   compraAtualizar: 'compra:atualizar',
+  cotacaoDolarConsultar: 'cotacao:dolar:consultar',
+  cepConsultarEndereco: 'cep:consultarEndereco',
 } as const;
 
 export type NomeCanal = (typeof CANAIS)[keyof typeof CANAIS];
@@ -104,7 +110,12 @@ export interface ApiEstudio {
   buscarCompra(id: number): Promise<CompraDetalhada | null>;
   criarCompra(dados: CriarCompra): Promise<Compra>;
   atualizarCompra(dados: AtualizarCompra): Promise<Compra | null>;
+  consultarCotacaoDolar(lado: ExchangeRateSide): Promise<ExchangeRateQuoteResult>;
 
   // Sistema
   aoRecarregar(callback: () => void): void;
 }
+
+export type ExchangeRateQuoteResult =
+  | { readonly ok: true; readonly value: ExchangeRateQuote }
+  | { readonly ok: false; readonly error: { readonly code: string; readonly message: string } };

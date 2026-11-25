@@ -36,7 +36,7 @@ const api: ApiEstudio = {
   // ==========================================
   // CEP
   // ==========================================
-  buscarCepSql: (cep) => ipcRenderer.invoke('sql:buscarCep', cep),
+  buscarCepSql: (cep) => ipcRenderer.invoke(CANAIS.cepConsultarEndereco, cep),
 
   // ==========================================
   // PROCEDIMENTOS DO ESTÚDIO
@@ -75,6 +75,8 @@ const api: ApiEstudio = {
   buscarCompra: (id) => ipcRenderer.invoke(CANAIS.compraBuscar, id),
   criarCompra: (dados) => ipcRenderer.invoke(CANAIS.compraCriar, dados),
   atualizarCompra: (dados) => ipcRenderer.invoke(CANAIS.compraAtualizar, dados),
+  consultarCotacaoDolar: (lado) =>
+    ipcRenderer.invoke(CANAIS.cotacaoDolarConsultar, lado),
 
   // ==========================================
   // SISTEMA

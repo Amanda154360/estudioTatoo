@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc -p tsconfig.json",
-    "test:module-integration": "tsc --ignoreConfig --strict --target ES2022 --module Node16 --moduleResolution Node16 --skipLibCheck --rootDir . --outDir dist/integration-tests src/main/application/MaterialApplicationService.ts src/main/application/CompraApplicationService.ts src/main/infra/database/ErroBanco.ts && node --test tests/electronIntegrationServices.test.mjs",
+    "test:module-integration": "tsc --ignoreConfig --strict --target ES2022 --module Node16 --moduleResolution Node16 --skipLibCheck --rootDir . --outDir dist/integration-tests src/main/application/MaterialApplicationService.ts src/main/application/CompraApplicationService.ts src/main/application/CotacaoDolarApplicationService.ts src/main/application/CepLookupApplicationService.ts src/main/infra/database/ErroBanco.ts && node --test tests/electronIntegrationServices.test.mjs",
     "start": "npm run build && electron dist/main/main.js",
     "db:init": "node sql/init-db.js"
   },
