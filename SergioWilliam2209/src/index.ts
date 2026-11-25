@@ -84,6 +84,22 @@ export {
   CrispinLocalCepAdapter,
   type LocalCepLookupPort,
 } from "./modules/addresses/adapters/CrispinLocalCepAdapter";
+export { ViaCepAdapter } from "./modules/addresses/adapters/ViaCepAdapter";
+export {
+  ViaCepHttpClient,
+  type ViaCepFetchFunction,
+} from "./modules/addresses/infrastructure/ViaCepHttpClient";
+export {
+  ViaCepHttpClientError,
+  type ViaCepHttpClientPort,
+  type ViaCepHttpResponse,
+  type ViaCepHttpFailureKind,
+} from "./modules/addresses/infrastructure/ViaCepHttpClientPort";
+export {
+  ViaCepResponseMapper,
+  ViaCepResponseError,
+  type ViaCepMappingResult,
+} from "./modules/addresses/infrastructure/ViaCepResponseMapper";
 export type { MaterialRepositoryPort } from "./modules/materials/infrastructure/MaterialRepositoryPort";
 export {
   MaterialRepository,

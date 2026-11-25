@@ -36,6 +36,7 @@ export type AddressLookupResult =
 
 export type AddressLookupErrorCode =
   | "LOOKUP_UNAVAILABLE"
+  | "LOOKUP_TIMEOUT"
   | "INVALID_LOOKUP_RESPONSE";
 
 export interface AddressLookupError extends ContractError {
