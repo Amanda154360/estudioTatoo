@@ -7,6 +7,13 @@ export function criarMenuPrincipal(windowManager: WindowManager): void {
       label: 'Cadastros',
       submenu: [
         {
+          label: 'Materiais',
+          accelerator: 'CmdOrCtrl+M',
+          click: () => {
+            windowManager.abrirTelaMateriais();
+          },
+        },
+        {
           label: 'Cadastrar Cliente',
           accelerator: 'CmdOrCtrl+N',
           click: () => {
@@ -25,6 +32,13 @@ export function criarMenuPrincipal(windowManager: WindowManager): void {
     {
       label: 'Estúdio',
       submenu: [
+        {
+          label: 'Compras de Materiais',
+          accelerator: 'CmdOrCtrl+B',
+          click: () => {
+            windowManager.abrirTelaCompras();
+          },
+        },
         {
           label: 'Procedimentos do Estúdio',
           accelerator: 'CmdOrCtrl+E',

@@ -85,7 +85,13 @@ export class PurchaseReadRepository implements PurchaseReadRepositoryPort {
   ): Promise<readonly ProcedureRow[]> {
     try {
       return await this.executor.consultar(sql, parameters);
-    } catch {
+    } catch (error: unknown) {
+      if (isMissingIndividualSchema(error)) {
+        throw new PurchaseReadRepositoryError(
+          "DATABASE_FAILURE",
+          error.message,
+        );
+      }
       throw new PurchaseReadRepositoryError(
         "DATABASE_FAILURE",
         "Não foi possível consultar compras.",
@@ -133,4 +139,13 @@ export class PurchaseReadRepository implements PurchaseReadRepositoryPort {
       date.getUTCDate() === day
     );
   }
+}
+
+function isMissingIndividualSchema(error: unknown): error is Error & { code: string } {
+  return (
+    error instanceof Error &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "INDIVIDUAL_SCHEMA_MISSING"
+  );
 }

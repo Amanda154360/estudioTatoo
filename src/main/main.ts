@@ -21,7 +21,7 @@ function testarConexaoBanco(): void {
         console.error('[ERRO] Conexão com o MySQL falhou:', erro.message);
         dialog.showErrorBox(
           'Erro de conexão com o banco',
-          `Não foi possível conectar ao MySQL.\n\nVerifique se o serviço está ativo e execute a migração (npm run db:init).\n\nDetalhes: ${erro.message}`,
+          `Não foi possível conectar ao MySQL.\n\nVerifique a configuração e a disponibilidade do banco. Migrações não são executadas automaticamente pelo aplicativo.\n\nDetalhes: ${erro.message}`,
         );
         return;
       }

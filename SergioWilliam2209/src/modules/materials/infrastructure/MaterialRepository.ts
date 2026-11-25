@@ -137,6 +137,9 @@ export class MaterialRepository implements MaterialRepositoryPort {
     try {
       return await this.executor.consultar(sql, parameters);
     } catch (error: unknown) {
+      if (this.isMissingIndividualSchema(error)) {
+        throw new MaterialRepositoryError("DATABASE_FAILURE", error.message);
+      }
       if (allowNotFound && this.isNotFoundSignal(error)) {
         throw new MaterialRepositoryError("NOT_FOUND", "Material não encontrado.");
       }
@@ -163,6 +166,15 @@ export class MaterialRepository implements MaterialRepositoryPort {
 
   private isNotFoundSignal(error: unknown): boolean {
     return error instanceof Error && error.message === MATERIAL_NOT_FOUND_SIGNAL;
+  }
+
+  private isMissingIndividualSchema(error: unknown): error is Error & { code: string } {
+    return (
+      error instanceof Error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "INDIVIDUAL_SCHEMA_MISSING"
+    );
   }
 
   private isRepositoryNotFound(error: unknown): boolean {

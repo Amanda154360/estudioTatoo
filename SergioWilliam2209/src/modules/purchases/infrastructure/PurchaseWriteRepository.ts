@@ -12,7 +12,7 @@ import type {
 import { PurchaseReadRepository } from "./PurchaseReadRepository";
 import type { PurchaseRepositoryPort } from "./PurchaseRepositoryPort";
 
-type PurchaseWriteRepositoryPort = Pick<
+export type PurchaseWriteRepositoryPort = Pick<
   PurchaseRepositoryPort,
   "insert" | "update"
 >;
@@ -102,7 +102,13 @@ export class PurchaseWriteRepository implements PurchaseWriteRepositoryPort {
   ): Promise<readonly ProcedureRow[]> {
     try {
       return await this.executor.consultar(sql, parameters);
-    } catch {
+    } catch (error: unknown) {
+      if (isMissingIndividualSchema(error)) {
+        throw new PurchaseWriteRepositoryError(
+          "DATABASE_FAILURE",
+          error.message,
+        );
+      }
       throw new PurchaseWriteRepositoryError(
         "DATABASE_FAILURE",
         "Não foi possível concluir a operação de compra.",
@@ -141,6 +147,15 @@ export class PurchaseWriteRepository implements PurchaseWriteRepositoryPort {
       "O banco retornou uma resposta inesperada para a operação de compra.",
     );
   }
+}
+
+function isMissingIndividualSchema(error: unknown): error is Error & { code: string } {
+  return (
+    error instanceof Error &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "INDIVIDUAL_SCHEMA_MISSING"
+  );
 }
 
 function serializeCreateInput(input: CreatePurchaseInput): {
