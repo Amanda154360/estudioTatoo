@@ -1,8 +1,6 @@
--- RASCUNHO ADITIVO — pendente de aprovação coletiva.
--- Não executar até revisão do modelo, da versão MySQL e da integração do runner.
--- Não altera tabelas existentes nem remove dados.
-
-USE estudio_tattoo;
+-- Migração incremental individual. O esquema deve ser selecionado pelo runner.
+-- Não cria bancos, não seleciona schema, não altera tabelas preexistentes e
+-- falha em caso de conflito de nome (sem IF NOT EXISTS para evitar mascará-lo).
 
 CREATE TABLE materiais (
   id INT AUTO_INCREMENT PRIMARY KEY,

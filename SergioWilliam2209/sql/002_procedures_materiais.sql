@@ -1,8 +1,5 @@
--- RASCUNHO — procedures de materiais; pendente de aprovação coletiva.
--- Não executar até revisão e integração por mecanismo de migração controlado.
--- O arquivo não remove nem substitui procedures existentes.
-
-USE estudio_tattoo;
+-- Procedures individuais de materiais. O esquema deve ser selecionado pelo runner.
+-- CREATE PROCEDURE falha se o nome já existir; nenhuma procedure é substituída.
 
 DELIMITER $$
 

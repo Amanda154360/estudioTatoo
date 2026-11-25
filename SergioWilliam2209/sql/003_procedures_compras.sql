@@ -1,8 +1,5 @@
--- RASCUNHO — procedures de consulta de compras; pendente de aprovação coletiva.
--- Não executar até revisão e integração por mecanismo de migração controlado.
--- Este arquivo não cria, remove nem modifica dados ou procedures existentes.
-
-USE estudio_tattoo;
+-- Procedures individuais de consulta de compras. O esquema é selecionado pelo runner.
+-- CREATE PROCEDURE falha se o nome já existir; nenhuma procedure é substituída.
 
 DELIMITER $$
 

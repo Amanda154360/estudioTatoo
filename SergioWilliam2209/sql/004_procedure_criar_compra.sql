@@ -1,8 +1,6 @@
--- RASCUNHO — criação transacional de compra e itens; pendente de aprovação.
--- Não executar até validar versão/configuração MySQL e integrar por migração.
--- Requer suporte a JSON e rotinas SIGNAL/RESIGNAL (MySQL 5.7.8+).
-
-USE estudio_tattoo;
+-- Criação transacional individual de compra e itens.
+-- O esquema é selecionado pelo runner; requer suporte a JSON e SIGNAL/RESIGNAL.
+-- Não registra movimentações de estoque.
 
 DELIMITER $$
 

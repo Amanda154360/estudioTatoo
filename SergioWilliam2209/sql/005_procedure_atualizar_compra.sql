@@ -1,8 +1,6 @@
--- RASCUNHO — atualização parcial transacional; pendente de aprovação coletiva.
--- Não executar antes de validar versão/configuração MySQL e integrar por migração.
--- Não remove itens e não altera moeda ou campos de cotação.
-
-USE estudio_tattoo;
+-- Atualização parcial transacional individual de compra e itens.
+-- O esquema é selecionado pelo runner; não remove itens, altera moeda/cotação
+-- nem registra movimentações de estoque.
 
 DELIMITER $$
 

@@ -1,6 +1,19 @@
-# Rascunho SQL de materiais e compras
+# Migração individual SQL de materiais e compras
 
-`001_materiais_compras_itens.sql` é uma proposta **aditiva e pendente de aprovação coletiva**. Não foi executada. Ela cria `materiais`, `compras` e `itens_compra`; não cria fornecedor nem altera tabelas existentes.
+`006_migracao_individual_materiais_compras.sql` é o ponto de entrada da migração incremental individual. Ele aplica, nesta ordem, os scripts 001–005 no schema já selecionado pelo cliente MySQL. Não foi executado nesta atividade.
+
+O pacote cria exclusivamente `materiais`, `compras` e `itens_compra`, além das procedures individuais nomeadas nos scripts 002–005. Não cria banco, não seleciona schema, não altera tabelas, views, triggers ou procedures existentes, e não contém `DROP TABLE`, `TRUNCATE` ou `CREATE OR REPLACE`. `CREATE TABLE`/`CREATE PROCEDURE` sem `IF NOT EXISTS` falham se o nome já existir, evitando ocultar um conflito ou substituir objetos.
+
+A autorização coletiva comunicada para esta atividade cobre a criação das três tabelas, não a aprovação de todas as regras de negócio codificadas nas procedures. As condições já presentes nos scripts (por exemplo, material ativo, limites de itens, validação de quantidades e compatibilidade de moeda) foram preservadas como regras provisórias; valide-as com o grupo antes de aplicar a migração.
+
+## Uso controlado
+
+1. Em um ambiente isolado, confirme que o schema de destino está selecionado e que os nomes `materiais`, `compras`, `itens_compra` e as procedures `sp_listar_materiais`, `sp_buscar_material_por_id`, `sp_cadastrar_material`, `sp_atualizar_material`, `sp_excluir_material`, `sp_listar_compras`, `sp_buscar_compra_por_id`, `sp_criar_compra_com_itens` e `sp_atualizar_compra_com_itens` não existem. Se qualquer um existir, interrompa e compare a definição antes de prosseguir.
+2. Faça a aplicação uma única vez pelo cliente `mysql`, a partir da raiz do repositório, após selecionar o schema autorizado. Exemplo de forma (não executado): `mysql NOME_SCHEMA_AUTORIZADO < SergioWilliam2209/sql/006_migracao_individual_materiais_compras.sql`.
+3. Não use `sql/executar_todos.sql`, `sql/init-db.js` ou outro inicializador coletivo para esta migração. O wrapper usa o comando `SOURCE` do cliente CLI e não é compatível com `mysql2.query()` sem um runner de migrações próprio.
+4. A migração não é reexecutável: DDL MySQL pode confirmar operações implicitamente; se houver falha parcial, pare e inspecione o estado antes de qualquer continuação. Não reaplique o pacote cegamente.
+
+O esquema coletivo não foi acessado nesta atividade. O SQL versionado em `origin/main` documenta `InnoDB`, `utf8mb4` e `utf8mb4_unicode_ci`, mas não substitui o preflight do schema de destino. Nenhum servidor MySQL isolado estava disponível nesta máquina; a execução real e a compatibilidade com a versão do servidor permanecem pendentes.
 
 ## Modelo
 
