@@ -115,6 +115,11 @@ export {
   type PurchaseReadRepositoryErrorCode,
 } from "./modules/purchases/infrastructure/PurchaseReadRepository";
 export {
+  PurchaseWriteRepository,
+  PurchaseWriteRepositoryError,
+  type PurchaseWriteRepositoryErrorCode,
+} from "./modules/purchases/infrastructure/PurchaseWriteRepository";
+export {
   PurchaseSqlRowMapper,
   type PurchaseReadDto,
   type PurchaseReadItemDto,
