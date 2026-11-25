@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' file:; script-src 'self' file:; style-src 'self' file: 'unsafe-inline'; img-src 'self' file: data:; object-src 'none'; base-uri 'none'; form-action 'self'"
+    />
+    <title>Procedimentos do Estúdio</title>
+    <link href="../../../node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="../css/estilo.css" rel="stylesheet" />
+  </head>
+  <body class="bg-light">
+    <div class="container-fluid p-4">
+      <header class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+          <h3 class="mb-0">Procedimentos do Estúdio</h3>
+          <small class="text-muted">Cadastro, edição, ativação e exclusão dos serviços oferecidos</small>
+        </div>
+        <div class="d-flex gap-2">
+          <button id="btnAtualizar" class="btn btn-outline-secondary" type="button">Atualizar</button>
+          <button id="btnNovo" class="btn btn-primary" type="button">+ Novo procedimento</button>
+        </div>
+      </header>
+
+      <div id="areaAvisos"></div>
+
+      <div class="card mb-3 shadow-sm">
+        <div class="card-body row g-2 align-items-end">
+          <div class="col-md-5">
+            <label for="campoBusca" class="form-label small fw-bold mb-1">Buscar</label>
+            <input
+              id="campoBusca"
+              class="form-control"
+              maxlength="120"
+              placeholder="Nome ou descrição do procedimento..."
+            />
+          </div>
+          <div class="col-md-4">
+            <label for="filtroCategoria" class="form-label small fw-bold mb-1">Categoria</label>
+            <select id="filtroCategoria" class="form-select">
+              <option value="">Todas as categorias</option>
+              <option value="Tatuagem">Tatuagem</option>
+              <option value="Piercing">Piercing</option>
+              <option value="Estética">Estética</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="checkApenasAtivos" />
+              <label class="form-check-label" for="checkApenasAtivos">Somente ativos</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">Catálogo</h5>
+        <span id="contador" class="badge bg-secondary">0 procedimento(s)</span>
+      </div>
+
+      <div class="table-responsive shadow-sm rounded">
+        <table class="table table-striped table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Categoria</th>
+              <th>Preço base</th>
+              <th>Duração</th>
+              <th>Status</th>
+              <th class="text-center" style="width: 260px">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="corpoTabela">
+            <tr>
+              <td colspan="6" class="text-center text-muted">Carregando...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal fade" id="modalServico" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form id="formServico">
+            <div class="modal-header">
+              <h5 class="modal-title" id="tituloModal">Novo procedimento</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="campoId" />
+              <div class="mb-3">
+                <label for="campoNome" class="form-label">Nome *</label>
+                <input id="campoNome" class="form-control" maxlength="120" required />
+              </div>
+              <div class="row g-2">
+                <div class="col-md-6 mb-3">
+                  <label for="campoCategoria" class="form-label">Categoria *</label>
+                  <select id="campoCategoria" class="form-select" required>
+                    <option value="Tatuagem">Tatuagem</option>
+                    <option value="Piercing">Piercing</option>
+                    <option value="Estética">Estética</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="campoPreco" class="form-label">Preço base (R$) *</label>
+                  <input
+                    id="campoPreco"
+                    type="number"
+                    class="form-control"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="row g-2">
+                <div class="col-md-6 mb-3">
+                  <label for="campoDuracao" class="form-label">Duração (min) *</label>
+                  <input
+                    id="campoDuracao"
+                    type="number"
+                    class="form-control"
+                    min="5"
+                    max="1440"
+                    step="5"
+                    required
+                  />
+                </div>
+                <div class="col-md-6 mb-3 d-flex align-items-end">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="campoAtivo" checked />
+                    <label class="form-check-label" for="campoAtivo">Ativo</label>
+                  </div>
+                </div>
+              </div>
+              <div class="mb-2">
+                <label for="campoDescricao" class="form-label">Descrição</label>
+                <textarea id="campoDescricao" class="form-control" rows="3" maxlength="2000"></textarea>
+              </div>
+              <div id="erroFormulario" class="alert alert-danger py-2 d-none"></div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-primary" id="btnSalvar">Salvar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="servicos.js"></script>
+  </body>
+</html>

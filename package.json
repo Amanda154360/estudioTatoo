@@ -1,0 +1,37 @@
+{
+  "name": "estudio-tattoo",
+  "version": "1.0.0",
+  "description": "Sistema de Gestão para Estúdio de Tatuagem, Piercing e Estética com rotinas 100% em SQL",
+  "main": "dist/main/main.js",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "start": "npm run build && electron dist/main/main.js",
+    "db:init": "node sql/init-db.js"
+  },
+  "keywords": [
+    "tattoo",
+    "piercing",
+    "estetica",
+    "mysql",
+    "stored-procedures",
+    "cep"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/nodemailer": "^8.0.2",
+    "electron": "^41.3.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.8",
+    "dotenv": "^17.4.2",
+    "mysql2": "^3.23.3",
+    "nodemailer": "^10.6.1",
+    "zod": "^4.6.7"
+  }
+}
