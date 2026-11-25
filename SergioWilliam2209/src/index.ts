@@ -63,6 +63,17 @@ export {
 } from "./modules/materials/infrastructure/MaterialRepository";
 export { MaterialSqlRowMapper } from "./modules/materials/infrastructure/MaterialSqlRowMapper";
 export type { PurchaseRepositoryPort } from "./modules/purchases/infrastructure/PurchaseRepositoryPort";
+export {
+  PurchaseReadRepository,
+  PurchaseReadRepositoryError,
+  type PurchaseReadRepositoryPort,
+  type PurchaseReadRepositoryErrorCode,
+} from "./modules/purchases/infrastructure/PurchaseReadRepository";
+export {
+  PurchaseSqlRowMapper,
+  type PurchaseReadDto,
+  type PurchaseReadItemDto,
+} from "./modules/purchases/infrastructure/PurchaseSqlRowMapper";
 export type {
   ProcedureExecutorPort,
   ProcedureRow,
