@@ -3,15 +3,20 @@ import type {
   DateOnly,
   DecimalString,
   IsoDateTime,
+  ProviderLocalDateTime,
 } from "../../../shared/primitives";
 import type { ContractError, Result } from "../../../shared/result";
 import type { ValidationError } from "../../../shared/validation";
+
+export type ExchangeRateSide = "buy" | "sell";
 
 export interface ExchangeRateQuery {
   readonly baseCurrency: CurrencyCode;
   readonly quoteCurrency: CurrencyCode;
   /** Requested effective date, if the approved provider supports historical rates. */
   readonly date?: DateOnly;
+  /** PTAX buy or sell quote. The application does not choose this for purchases. */
+  readonly side: ExchangeRateSide;
 }
 
 export interface ExchangeRateQuote {
@@ -20,22 +25,27 @@ export interface ExchangeRateQuote {
   /** Decimal text; never use floating-point `number` for the rate. */
   readonly rate: DecimalString;
   readonly source: string;
-  /** Time reported/observed by the provider, represented as an ISO string. */
-  readonly quotedAt: IsoDateTime;
-  readonly effectiveDate?: DateOnly;
+  readonly side: ExchangeRateSide;
+  /** Raw BCB local date/time; PTAX does not provide an explicit UTC offset here. */
+  readonly quotedAt: ProviderLocalDateTime;
+  /** Calendar date to which this quote applies. */
+  readonly effectiveDate: DateOnly;
+  /** Instant this application received the provider response, in UTC. */
+  readonly retrievedAt: IsoDateTime;
 }
 
 export type ExchangeRateErrorCode =
   | "PROVIDER_UNAVAILABLE"
   | "RATE_NOT_FOUND"
   | "INVALID_PROVIDER_RESPONSE"
-  | "UNSUPPORTED_CURRENCY";
+  | "UNSUPPORTED_CURRENCY"
+  | "INVALID_QUERY";
 
 export interface ExchangeRateError extends ContractError {
   readonly code: ExchangeRateErrorCode;
 }
 
-/** Future provider/service boundary; provider and endpoint are not selected. */
+/** Provider-independent exchange-rate lookup boundary. */
 export interface ExchangeRateLookupContract {
   getQuote(
     query: ExchangeRateQuery,

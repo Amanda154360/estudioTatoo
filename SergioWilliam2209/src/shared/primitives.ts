@@ -19,6 +19,14 @@ export type DateOnly = string & { readonly __brand: "DateOnly" };
 export type IsoDateTime = string & { readonly __brand: "IsoDateTime" };
 
 /**
+ * Provider-local date/time text without a documented timezone or offset.
+ * Keep it distinct from IsoDateTime; do not silently assign a timezone.
+ */
+export type ProviderLocalDateTime = string & {
+  readonly __brand: "ProviderLocalDateTime";
+};
+
+/**
  * Decimal text, not a JavaScript number. Precision, scale and validation rules
  * remain domain/schema decisions.
  */

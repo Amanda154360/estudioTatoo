@@ -6,6 +6,7 @@ export type {
   DecimalString,
   Identifier,
   IsoDateTime,
+  ProviderLocalDateTime,
   MaterialId,
   Money,
   PurchaseId,
@@ -38,10 +39,30 @@ export type {
 export type {
   ExchangeRateError,
   ExchangeRateErrorCode,
+  ExchangeRateSide,
   ExchangeRateLookupContract,
   ExchangeRateQuery,
   ExchangeRateQuote,
 } from "./modules/exchange-rates/contracts/exchange-rate.contracts";
+export {
+  BcbPtaxProvider,
+  SystemClock,
+  PtaxProviderError,
+  type ClockPort,
+} from "./modules/exchange-rates/infrastructure/BcbPtaxProvider";
+export {
+  BcbPtaxResponseMapper,
+  PtaxResponseError,
+  type PtaxClosingRecord,
+} from "./modules/exchange-rates/infrastructure/BcbPtaxResponseMapper";
+export type { ExchangeRateProviderPort } from "./modules/exchange-rates/infrastructure/ExchangeRateProviderPort";
+export {
+  HttpTimeoutError,
+  type HttpClientPort,
+  type HttpRequestOptions,
+  type HttpResponse,
+} from "./modules/exchange-rates/infrastructure/HttpClientPort";
+export { ExchangeRateService } from "./modules/exchange-rates/services/ExchangeRateService";
 export type {
   AddressDto,
   AddressLookupContract,
