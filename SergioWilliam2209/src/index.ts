@@ -100,6 +100,7 @@ export {
   ViaCepResponseError,
   type ViaCepMappingResult,
 } from "./modules/addresses/infrastructure/ViaCepResponseMapper";
+export { CepLookupService } from "./modules/addresses/services/CepLookupService";
 export type { MaterialRepositoryPort } from "./modules/materials/infrastructure/MaterialRepositoryPort";
 export {
   MaterialRepository,
