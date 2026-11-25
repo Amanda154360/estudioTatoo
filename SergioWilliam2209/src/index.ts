@@ -57,11 +57,18 @@ export {
 } from "./modules/exchange-rates/infrastructure/BcbPtaxResponseMapper";
 export type { ExchangeRateProviderPort } from "./modules/exchange-rates/infrastructure/ExchangeRateProviderPort";
 export {
+  HttpClientError,
   HttpTimeoutError,
   type HttpClientPort,
   type HttpRequestOptions,
   type HttpResponse,
 } from "./modules/exchange-rates/infrastructure/HttpClientPort";
+export {
+  NodeFetchHttpClient,
+  NodeFetchHttpClientError,
+  type NodeFetchFunction,
+  type NodeFetchHttpClientErrorCode,
+} from "./modules/exchange-rates/infrastructure/NodeFetchHttpClient";
 export { ExchangeRateService } from "./modules/exchange-rates/services/ExchangeRateService";
 export type {
   AddressDto,

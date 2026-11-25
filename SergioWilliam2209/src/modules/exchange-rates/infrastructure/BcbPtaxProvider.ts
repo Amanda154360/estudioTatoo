@@ -3,7 +3,7 @@ import type {
   ExchangeRateQuote,
 } from "../contracts/exchange-rate.contracts";
 import type { CurrencyCode } from "../../../shared/primitives";
-import type { HttpClientPort } from "./HttpClientPort";
+import { HttpClientError, type HttpClientPort } from "./HttpClientPort";
 import {
   BcbPtaxResponseMapper,
   PtaxResponseError,
@@ -53,7 +53,15 @@ export class BcbPtaxProvider implements ExchangeRateProviderPort {
     let response;
     try {
       response = await this.http.get(url, { timeoutMs: REQUEST_TIMEOUT_MS });
-    } catch {
+    } catch (error: unknown) {
+      if (
+        error instanceof HttpClientError &&
+        (error.code === "INVALID_JSON" ||
+          error.code === "EMPTY_RESPONSE" ||
+          error.code === "BODY_TOO_LARGE")
+      ) {
+        throw new PtaxProviderError("invalid-response");
+      }
       throw new PtaxProviderError("unavailable");
     }
     if (response.status < 200 || response.status >= 300) {

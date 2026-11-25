@@ -13,9 +13,19 @@ export interface HttpResponse {
   readonly body: unknown;
 }
 
-export class HttpTimeoutError extends Error {
+export class HttpClientError extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "HttpClientError";
+  }
+}
+
+export class HttpTimeoutError extends HttpClientError {
   constructor() {
-    super("HTTP request timed out.");
+    super("TIMEOUT", "A solicitação HTTP excedeu o tempo limite.");
     this.name = "HttpTimeoutError";
   }
 }
