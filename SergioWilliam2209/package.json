@@ -1,0 +1,15 @@
+{
+  "name": "estudiotattoo-sergiowilliam2209-modules",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TypeScript modules for future integration into the estudioTatoo Electron application",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node dist/modules/addresses/adapters/CrispinLocalCepAdapter.spec.js && node dist/modules/persistence/PersistencePorts.spec.js && node dist/modules/materials/infrastructure/MaterialRepository.spec.js && node dist/modules/purchases/infrastructure/PurchaseReadRepository.spec.js && node dist/modules/exchange-rates/services/ExchangeRateService.spec.js && node dist/modules/exchange-rates/infrastructure/NodeFetchHttpClient.spec.js && node dist/modules/addresses/adapters/ViaCepAdapter.spec.js && node dist/modules/addresses/infrastructure/ViaCepHttpClient.spec.js && node dist/modules/addresses/services/CepLookupService.spec.js && node dist/modules/purchases/infrastructure/PurchaseWriteRepository.spec.js"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

@@ -9,6 +9,23 @@ import type {
   Lembrete,
   ResultadoEnvioLembretes,
 } from './lembrete';
+import type {
+  CriarMaterial,
+  FiltroMateriais,
+  Material,
+  AtualizarMaterial,
+} from './material';
+import type {
+  AtualizarCompra,
+  Compra,
+  CompraDetalhada,
+  CriarCompra,
+  FiltroCompras,
+} from './compra';
+import type {
+  ExchangeRateSide,
+  ExchangeRateQuote,
+} from '../../../SergioWilliam2209/src/modules/exchange-rates/contracts/exchange-rate.contracts';
 
 /** Contrato único entre o processo principal e o renderer. */
 export const CANAIS = {
@@ -25,6 +42,19 @@ export const CANAIS = {
   lembreteCancelar: 'lembrete:cancelar',
   lembreteExcluir: 'lembrete:excluir',
   lembreteCriarManual: 'lembrete:criarManual',
+
+  materialListar: 'material:listar',
+  materialBuscar: 'material:buscar',
+  materialCriar: 'material:criar',
+  materialAtualizar: 'material:atualizar',
+  materialDesativar: 'material:desativar',
+
+  compraListar: 'compra:listar',
+  compraBuscar: 'compra:buscar',
+  compraCriar: 'compra:criar',
+  compraAtualizar: 'compra:atualizar',
+  cotacaoDolarConsultar: 'cotacao:dolar:consultar',
+  cepConsultarEndereco: 'cep:consultarEndereco',
 } as const;
 
 export type NomeCanal = (typeof CANAIS)[keyof typeof CANAIS];
@@ -68,6 +98,24 @@ export interface ApiEstudio {
   excluirLembrete(id: number): Promise<void>;
   criarLembreteManual(agendamentoId: number): Promise<Lembrete>;
 
+  // Materiais
+  listarMateriais(filtro: FiltroMateriais): Promise<readonly Material[]>;
+  buscarMaterial(id: number): Promise<Material | null>;
+  criarMaterial(dados: CriarMaterial): Promise<Material>;
+  atualizarMaterial(dados: AtualizarMaterial): Promise<Material | null>;
+  desativarMaterial(id: number): Promise<boolean>;
+
+  // Compras (exclusão e remoção de itens ainda não são suportadas).
+  listarCompras(filtro: FiltroCompras): Promise<readonly CompraDetalhada[]>;
+  buscarCompra(id: number): Promise<CompraDetalhada | null>;
+  criarCompra(dados: CriarCompra): Promise<Compra>;
+  atualizarCompra(dados: AtualizarCompra): Promise<Compra | null>;
+  consultarCotacaoDolar(lado: ExchangeRateSide): Promise<ExchangeRateQuoteResult>;
+
   // Sistema
   aoRecarregar(callback: () => void): void;
 }
+
+export type ExchangeRateQuoteResult =
+  | { readonly ok: true; readonly value: ExchangeRateQuote }
+  | { readonly ok: false; readonly error: { readonly code: string; readonly message: string } };

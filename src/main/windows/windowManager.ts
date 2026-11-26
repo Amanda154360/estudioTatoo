@@ -57,6 +57,14 @@ export class WindowManager {
     return this.abrirTela('lembretes.html', { width: 1120, height: 720 });
   }
 
+  abrirTelaMateriais(): BrowserWindow {
+    return this.abrirTela('materiais.html', { width: 1050, height: 760 });
+  }
+
+  abrirTelaCompras(): BrowserWindow {
+    return this.abrirTela('compras.html', { width: 1120, height: 800 });
+  }
+
   private abrirTela(arquivo: string, dimensoes: { width: number; height: number }): BrowserWindow {
     const janela = this.criarJanela({ ...dimensoes, parent: this.janelaPrincipal ?? undefined });
     void janela.loadFile(path.join(RAIZ_RENDERER, 'pages', arquivo));

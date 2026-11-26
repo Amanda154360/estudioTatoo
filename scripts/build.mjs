@@ -27,6 +27,12 @@ await build({
 });
 
 await build({
+  ...COMUM,
+  entryPoints: ['src/main/visualOfflineMain.ts'],
+  outfile: 'dist/main/visualOfflineMain.js',
+});
+
+await build({
   bundle: true,
   platform: 'browser',
   target: 'es2022',
@@ -36,6 +42,8 @@ await build({
   entryPoints: {
     servicos: 'src/renderer/pages/servicos.ts',
     lembretes: 'src/renderer/pages/lembretes.ts',
+    materiais: 'src/renderer/pages/materiais.ts',
+    compras: 'src/renderer/pages/compras.ts',
   },
   outdir: 'src/renderer/pages',
   banner: {

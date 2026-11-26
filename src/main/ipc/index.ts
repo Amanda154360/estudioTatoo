@@ -4,6 +4,8 @@ import registrarClienteIpc from './clienteIpc';
 import registrarProfissionalIpc from './profissionalIpc';
 import { registrarLembreteIpc } from './lembreteIpc';
 import { registrarServicoIpc } from './servicoIpc';
+import { registrarMaterialCompraIpc } from './materialCompraIpc';
+import { registrarApiExternaIpc } from './apiExternaIpc';
 
 export function registrarTodosIpcs(windowManager: WindowManager): void {
   // Módulos legados (JS) — portados para TS na próxima fase.
@@ -14,4 +16,6 @@ export function registrarTodosIpcs(windowManager: WindowManager): void {
   // Módulos novos, 100% TypeScript.
   registrarServicoIpc();
   registrarLembreteIpc();
+  registrarMaterialCompraIpc();
+  registrarApiExternaIpc();
 }

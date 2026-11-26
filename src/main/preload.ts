@@ -36,7 +36,7 @@ const api: ApiEstudio = {
   // ==========================================
   // CEP
   // ==========================================
-  buscarCepSql: (cep) => ipcRenderer.invoke('sql:buscarCep', cep),
+  buscarCepSql: (cep) => ipcRenderer.invoke(CANAIS.cepConsultarEndereco, cep),
 
   // ==========================================
   // PROCEDIMENTOS DO ESTÚDIO
@@ -58,6 +58,25 @@ const api: ApiEstudio = {
   excluirLembrete: (id) => ipcRenderer.invoke(CANAIS.lembreteExcluir, id),
   criarLembreteManual: (agendamentoId) =>
     ipcRenderer.invoke(CANAIS.lembreteCriarManual, agendamentoId),
+
+  // ==========================================
+  // MATERIAIS
+  // ==========================================
+  listarMateriais: (filtro) => ipcRenderer.invoke(CANAIS.materialListar, filtro),
+  buscarMaterial: (id) => ipcRenderer.invoke(CANAIS.materialBuscar, id),
+  criarMaterial: (dados) => ipcRenderer.invoke(CANAIS.materialCriar, dados),
+  atualizarMaterial: (dados) => ipcRenderer.invoke(CANAIS.materialAtualizar, dados),
+  desativarMaterial: (id) => ipcRenderer.invoke(CANAIS.materialDesativar, id),
+
+  // ==========================================
+  // COMPRAS
+  // ==========================================
+  listarCompras: (filtro) => ipcRenderer.invoke(CANAIS.compraListar, filtro),
+  buscarCompra: (id) => ipcRenderer.invoke(CANAIS.compraBuscar, id),
+  criarCompra: (dados) => ipcRenderer.invoke(CANAIS.compraCriar, dados),
+  atualizarCompra: (dados) => ipcRenderer.invoke(CANAIS.compraAtualizar, dados),
+  consultarCotacaoDolar: (lado) =>
+    ipcRenderer.invoke(CANAIS.cotacaoDolarConsultar, lado),
 
   // ==========================================
   // SISTEMA
