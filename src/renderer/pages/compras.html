@@ -55,7 +55,11 @@
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body">
-              <div id="itensExistentes" class="alert alert-light border d-none"></div>
+              <div id="itensExistentes" class="alert alert-light border d-none">
+                <strong>Itens já registrados — edite quantidade e preço</strong>
+                <ul id="listaItensExistentes" class="list-group mt-2"></ul>
+                <small class="text-muted">Os itens existentes não podem ser removidos nesta tela.</small>
+              </div>
               <div class="row g-3">
                 <div class="col-md-6">
                   <label for="campoData" class="form-label">Data *</label>

@@ -10,6 +10,7 @@ import type {
   MaterialId,
   Money,
   PurchaseId,
+  PurchaseItemId,
   Quantity,
 } from "../../../shared/primitives";
 import type {
@@ -208,8 +209,8 @@ async function runTests(): Promise<void> {
       {
         id: 101,
         materialId: 11,
-        quantity: "2.125",
-        amount: "19.9900",
+        quantity: "4.250",
+        amount: "22.5000",
         name: "Pigmento",
         unit: "ml",
       },
@@ -227,17 +228,31 @@ async function runTests(): Promise<void> {
   const update: UpdatePurchaseInput = {
     date: "2026-11-26" as DateOnly,
     notes: "Atualizada",
-    items: [{
-      materialId: 13 as MaterialId,
-      quantity: "3.500" as Quantity,
-      unitPrice: {
-        amount: decimal("5.2500"),
-        currency: "BRL" as CurrencyCode,
-      } as Money,
-    }],
+    items: [
+      {
+        id: 101 as PurchaseItemId,
+        quantity: "4.250" as Quantity,
+        unitPrice: { amount: decimal("22.5000") },
+      },
+      {
+        materialId: 13 as MaterialId,
+        quantity: "3.500" as Quantity,
+        unitPrice: {
+          amount: decimal("5.2500"),
+          currency: "BRL" as CurrencyCode,
+        } as Money,
+      },
+    ],
   };
   const updated = await updater.update(31 as PurchaseId, update);
   assert(updated?.id === 31 && updated.items?.length === 2, "retorna DTO atualizado");
+  const updatedExistingItem = updated?.items?.[0];
+  assert(
+    updatedExistingItem?.id === 101 &&
+      updatedExistingItem.quantity === "4.250" &&
+      updatedExistingItem.unitPrice?.amount === "22.5000",
+    "item existente mantém o ID e retorna os novos valores",
+  );
   const updateCall = updateExecutor.calls[0]!;
   assert(
     updateCall.sql === "CALL sp_atualizar_compra_com_itens(?, ?, ?)",
@@ -248,12 +263,16 @@ async function runTests(): Promise<void> {
   assert(typeof updateCall.parameters[2] === "string", "serializa operações de itens");
   const operations = JSON.parse(updateCall.parameters[2] as string) as Array<Record<string, unknown>>;
   assert(
-    operations.length === 1 &&
-      operations[0]?.material_id === 13 &&
-      operations[0]?.quantidade === "3.500" &&
-      operations[0]?.preco_unitario === "5.2500" &&
-      operations[0]?.moeda === "BRL",
-    "item sem ID é serializado como inclusão, conforme procedure 005",
+    operations.length === 2 &&
+      operations[0]?.id === 101 &&
+      operations[0]?.quantidade === "4.250" &&
+      operations[0]?.preco_unitario === "22.5000" &&
+      !("material_id" in operations[0]!) &&
+      operations[1]?.material_id === 13 &&
+      operations[1]?.quantidade === "3.500" &&
+      operations[1]?.preco_unitario === "5.2500" &&
+      operations[1]?.moeda === "BRL",
+    "edita item pelo ID e inclui o item sem ID na mesma operação",
   );
   assert(
     updateExecutor.calls[1]?.sql === "CALL sp_buscar_compra_por_id(?)",
@@ -310,6 +329,48 @@ async function runTests(): Promise<void> {
   );
   assert(invalidInputExecutor.calls.length === 0, "campos sem suporte não chamam executor");
 
+  await assertRepositoryError(
+    () => invalidRepository.update(31 as PurchaseId, {
+      items: [{
+        id: 0 as never,
+        quantity: "1" as Quantity,
+        unitPrice: { amount: decimal("1.0000") },
+      }],
+    }),
+    "INVALID_INPUT",
+  );
+  await assertRepositoryError(
+    () => invalidRepository.update(31 as PurchaseId, {
+      items: [{
+        id: 101 as never,
+        quantity: "0" as Quantity,
+        unitPrice: { amount: decimal("1.0000") },
+      }],
+    }),
+    "INVALID_INPUT",
+  );
+  await assertRepositoryError(
+    () => invalidRepository.update(31 as PurchaseId, {
+      items: [{
+        id: 101 as never,
+        quantity: "1" as Quantity,
+        unitPrice: { amount: decimal("1.00000") },
+      }],
+    }),
+    "INVALID_INPUT",
+  );
+  await assertRepositoryError(
+    () => invalidRepository.update(31 as PurchaseId, {
+      items: [{
+        id: 101 as never,
+        quantity: "1" as Quantity,
+        unitPrice: { amount: decimal("1.0000"), currency: "BRL" } as Money,
+      }],
+    }),
+    "INVALID_INPUT",
+  );
+  assert(invalidInputExecutor.calls.length === 0, "edições inválidas não chamam executor");
+
   const malformedResultExecutor = new FakeProcedureExecutor([[{ compra_id: 31 }]]);
   await assertRepositoryError(
     () => new PurchaseWriteRepository(malformedResultExecutor).insert(createdInput()),
@@ -349,7 +410,7 @@ async function runTests(): Promise<void> {
     "DATABASE_FAILURE",
   );
 
-  console.log("PurchaseWriteRepository tests passed (12 scenarios).");
+  console.log("PurchaseWriteRepository tests passed (16 scenarios).");
 }
 
 void runTests();

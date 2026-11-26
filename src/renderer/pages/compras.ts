@@ -1,6 +1,11 @@
 import type { Material } from '../../shared/contracts/material';
-import type { CompraDetalhada, CriarCompra } from '../../shared/contracts/compra';
-import type { ItemCompraInput } from '../../shared/contracts/compra';
+import type {
+  CompraDetalhada,
+  CriarCompra,
+  ItemCompraExistenteAtualizacao,
+  ItemCompraInput,
+  OperacaoItemCompraAtualizacao,
+} from '../../shared/contracts/compra';
 import type { ExchangeRateSide } from '../../../SergioWilliam2209/src/modules/exchange-rates/contracts/exchange-rate.contracts';
 import {
   criarBotao,
@@ -17,9 +22,17 @@ interface ItemRascunho {
   readonly amount: string;
 }
 
+interface ItemExistenteRascunho {
+  readonly id: number;
+  readonly materialName: string;
+  readonly quantity: string;
+  readonly amount: string;
+}
+
 let compras: readonly CompraDetalhada[] = [];
 let materiais: readonly Material[] = [];
 let itensNovos: ItemRascunho[] = [];
+let itensExistentes: ItemExistenteRascunho[] = [];
 let compraEmEdicao: CompraDetalhada | null = null;
 
 const corpoTabela = exigirElemento<HTMLTableSectionElement>('#corpoTabela');
@@ -27,6 +40,7 @@ const form = exigirElemento<HTMLFormElement>('#formCompra');
 const modal = new window.bootstrap.Modal(exigirElemento<HTMLDivElement>('#modalCompra'));
 const erroFormulario = exigirElemento<HTMLDivElement>('#erroFormulario');
 const listaItens = exigirElemento<HTMLUListElement>('#listaItensNovos');
+const listaItensExistentes = exigirElemento<HTMLUListElement>('#listaItensExistentes');
 const selectMaterial = exigirElemento<HTMLSelectElement>('#campoMaterial');
 const btnSalvar = exigirElemento<HTMLButtonElement>('#btnSalvar');
 const campoMoeda = exigirElemento<HTMLInputElement>('#campoMoeda');
@@ -118,9 +132,63 @@ function renderizarItensNovos(): void {
   });
 }
 
+function renderizarItensExistentes(): void {
+  listaItensExistentes.replaceChildren();
+  for (const item of itensExistentes) {
+    const linha = document.createElement('li');
+    linha.className = 'list-group-item';
+
+    const nome = document.createElement('div');
+    nome.className = 'fw-semibold mb-2';
+    nome.textContent = `${item.materialName} (item #${item.id})`;
+    linha.append(nome);
+
+    const campos = document.createElement('div');
+    campos.className = 'row g-2';
+    campos.append(
+      criarCampoItemExistente(item, 'quantity', 'Quantidade', '3'),
+      criarCampoItemExistente(item, 'amount', 'Preço unitário', '4'),
+    );
+    linha.append(campos);
+    listaItensExistentes.append(linha);
+  }
+}
+
+function criarCampoItemExistente(
+  item: ItemExistenteRascunho,
+  campo: 'quantity' | 'amount',
+  rotulo: string,
+  casasDecimais: string,
+): HTMLDivElement {
+  const coluna = document.createElement('div');
+  coluna.className = 'col-sm-6';
+  const label = document.createElement('label');
+  label.className = 'form-label small mb-1';
+  label.textContent = rotulo;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.inputMode = 'decimal';
+  input.className = 'form-control form-control-sm';
+  input.value = campo === 'quantity' ? item.quantity : item.amount;
+  input.dataset.itemId = String(item.id);
+  input.dataset.itemField = campo;
+  input.setAttribute('aria-label', `${rotulo} do item ${item.id}`);
+  input.placeholder = `0.${'0'.repeat(Number(casasDecimais))}`;
+  label.htmlFor = `item-${item.id}-${campo}`;
+  input.id = label.htmlFor;
+  coluna.append(label, input);
+  return coluna;
+}
+
 function abrirFormulario(compra: CompraDetalhada | null): void {
   compraEmEdicao = compra;
   itensNovos = [];
+  itensExistentes = (compra?.items ?? []).map((item) => ({
+    id: item.id,
+    materialName: item.materialNameSnapshot ?? `Material #${item.materialId}`,
+    quantity: item.quantity,
+    amount: item.unitPrice.amount,
+  }));
   exigirElemento<HTMLHeadingElement>('#tituloModal').textContent =
     compra ? `Compra #${compra.id} — atualização parcial` : 'Nova compra';
   exigirElemento<HTMLInputElement>('#campoData').value =
@@ -129,15 +197,12 @@ function abrirFormulario(compra: CompraDetalhada | null): void {
   campoMoeda.disabled = compra !== null;
   exigirElemento<HTMLTextAreaElement>('#campoObservacoes').value = compra?.notes ?? '';
   const existentes = exigirElemento<HTMLDivElement>('#itensExistentes');
-  if (compra) {
-    existentes.textContent = `Itens já registrados: ${(compra.items ?? []).map((item) =>
-      `${item.materialNameSnapshot ?? `Material #${item.materialId}`} — ${item.quantity} × ${item.unitPrice.amount}`,
-    ).join('; ') || 'detalhes indisponíveis'}. Itens existentes não são alterados nem removidos por esta tela.`;
+  if (itensExistentes.length > 0) {
     existentes.classList.remove('d-none');
   } else {
-    existentes.textContent = '';
     existentes.classList.add('d-none');
   }
+  renderizarItensExistentes();
   exigirElemento<HTMLInputElement>('#campoQuantidade').value = '';
   exigirElemento<HTMLInputElement>('#campoPreco').value = '';
   renderizarItensNovos();
@@ -199,7 +264,7 @@ async function abrirCompra(id: number): Promise<void> {
   }
 }
 
-function montarItens(): readonly ItemCompraInput[] {
+function montarItensNovos(): readonly ItemCompraInput[] {
   const currency = campoMoeda.value.trim().toUpperCase();
   return itensNovos.map((item) => ({
     materialId: item.materialId,
@@ -208,31 +273,41 @@ function montarItens(): readonly ItemCompraInput[] {
   }));
 }
 
+function montarOperacoesItens(): readonly OperacaoItemCompraAtualizacao[] {
+  const existentes: readonly ItemCompraExistenteAtualizacao[] = itensExistentes.map((item) => ({
+    id: item.id,
+    quantity: item.quantity,
+    unitPrice: { amount: item.amount },
+  }));
+  return [...existentes, ...montarItensNovos()];
+}
+
 form.addEventListener('submit', async (evento) => {
   evento.preventDefault();
   btnSalvar.disabled = true;
   erroFormulario.classList.add('d-none');
   const date = exigirElemento<HTMLInputElement>('#campoData').value;
   const notes = exigirElemento<HTMLTextAreaElement>('#campoObservacoes').value;
-  const items = montarItens();
+  const itemsNovos = montarItensNovos();
   try {
     if (compraEmEdicao) {
+      const items = montarOperacoesItens();
       await window.api.atualizarCompra({
         id: compraEmEdicao.id,
         date,
         notes,
         items,
       });
-      mostrarAviso('Cabeçalho atualizado; os novos itens foram acrescentados. Itens antigos não foram removidos.', 'sucesso');
+      mostrarAviso('Compra atualizada; itens existentes foram editados e os novos foram acrescentados.', 'sucesso');
     } else {
-      if (items.length === 0) {
+      if (itemsNovos.length === 0) {
         throw new Error('Adicione ao menos um item à compra.');
       }
       const dados = {
         date,
         currency: campoMoeda.value.trim().toUpperCase(),
         notes,
-        items,
+        items: itemsNovos,
       } satisfies CriarCompra;
       await window.api.criarCompra(dados);
       mostrarAviso('Compra cadastrada.', 'sucesso');
@@ -255,6 +330,19 @@ exigirElemento<HTMLButtonElement>('#btnNova').addEventListener('click', () => {
     );
 });
 exigirElemento<HTMLButtonElement>('#btnAdicionarItem').addEventListener('click', novoItem);
+listaItensExistentes.addEventListener('input', (evento) => {
+  const alvo = evento.target;
+  if (!(alvo instanceof HTMLInputElement)) return;
+  const id = Number(alvo.dataset.itemId);
+  const campo = alvo.dataset.itemField;
+  if (!Number.isSafeInteger(id) || !['quantity', 'amount'].includes(campo ?? '')) return;
+  itensExistentes = itensExistentes.map((item) => {
+    if (item.id !== id) return item;
+    return campo === 'quantity'
+      ? { ...item, quantity: alvo.value.trim() }
+      : { ...item, amount: alvo.value.trim() };
+  });
+});
 exigirElemento<HTMLButtonElement>('#btnAtualizar').addEventListener('click', () => void carregar());
 exigirElemento<HTMLButtonElement>('#btnFiltrar').addEventListener('click', () => void carregar());
 campoMoeda.addEventListener('input', renderizarItensNovos);
