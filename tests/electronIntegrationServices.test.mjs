@@ -76,6 +76,10 @@ test('serviço de compras separa consultas da escrita parcial suportada', async 
       calls.push({ operation: 'update', args });
       return { id: 12 };
     },
+    cancel: async (...args) => {
+      calls.push({ operation: 'cancel', args });
+      return true;
+    },
   };
 
   const service = new CompraApplicationService(reads, writes);
@@ -91,14 +95,17 @@ test('serviço de compras separa consultas da escrita parcial suportada', async 
     },
   ];
   await service.atualizar(12, { notes: 'Revisada', items: operacoesItens });
+  assert.equal(await service.cancelar(12), true);
 
   assert.deepEqual(calls.map(({ operation }) => operation), [
     'findMany',
     'findById',
     'insert',
     'update',
+    'cancel',
   ]);
   assert.deepEqual(calls[3]?.args, [12, { notes: 'Revisada', items: operacoesItens }]);
+  assert.deepEqual(calls[4]?.args, [12]);
 });
 
 test('erro de estrutura individual ausente é claro e não tenta migrar', () => {

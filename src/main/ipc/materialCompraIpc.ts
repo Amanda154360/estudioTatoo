@@ -68,4 +68,7 @@ export function registrarMaterialCompraIpc(): void {
     const { id, ...dados } = payload as { id: number } & UpdatePurchaseInput;
     return purchases.atualizar(id, dados);
   });
+  SegurancaIpc.registrarCanal(CANAIS.compraCancelar, compraIdSchema, (id) =>
+    purchases.cancelar(id),
+  );
 }

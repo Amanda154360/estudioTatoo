@@ -13,6 +13,7 @@ import type {
   Quantity,
   UnitOfMeasure,
 } from "../../../shared/primitives";
+import type { PurchaseStatus } from "../contracts/purchase.contracts";
 import type { ProcedureRow } from "../../persistence/contracts/ProcedureExecutorPort";
 
 /** Read-specific shape preserves the SQL material-name snapshot separately. */
@@ -72,12 +73,14 @@ export class PurchaseSqlRowMapper {
           id: "compra_id",
           date: "compra_data_compra",
           currency: "compra_moeda",
+          status: "compra_status",
           notes: "compra_observacoes",
         }
       : {
           id: "id",
           date: "data_compra",
           currency: "moeda",
+          status: "status",
           notes: "observacoes",
         };
 
@@ -92,6 +95,10 @@ export class PurchaseSqlRowMapper {
       currency: this.readCurrency(
         this.requiredColumn(row, fields.currency),
         fields.currency,
+      ),
+      status: this.readStatus(
+        this.requiredColumn(row, fields.status),
+        fields.status,
       ),
       ...(rawNotes === null || rawNotes === "" ? {} : { notes: rawNotes }),
     };
@@ -209,6 +216,11 @@ export class PurchaseSqlRowMapper {
     return value.trim() as CurrencyCode;
   }
 
+  private readStatus(value: unknown, field: string): PurchaseStatus {
+    if (value === "ATIVA" || value === "CANCELADA") return value;
+    throw new PurchaseSqlRowMapperError(`Status SQL inválido: ${field}.`);
+  }
+
   private readOptionalString(value: unknown, field: string): string | undefined {
     if (value === null || value === undefined || value === "") return undefined;
     if (typeof value !== "string") {
@@ -242,6 +254,7 @@ export class PurchaseSqlRowMapper {
       left.id === right.id &&
       left.date === right.date &&
       left.currency === right.currency &&
+      left.status === right.status &&
       left.notes === right.notes
     );
   }

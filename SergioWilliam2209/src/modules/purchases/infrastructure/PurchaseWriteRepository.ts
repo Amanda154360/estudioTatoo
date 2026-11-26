@@ -15,7 +15,7 @@ import type { PurchaseRepositoryPort } from "./PurchaseRepositoryPort";
 
 export type PurchaseWriteRepositoryPort = Pick<
   PurchaseRepositoryPort,
-  "insert" | "update"
+  "insert" | "update" | "cancel"
 >;
 
 type CreateItemProcedurePayload = {
@@ -37,7 +37,9 @@ export type PurchaseWriteRepositoryErrorCode =
   | "INVALID_INPUT"
   | "UNSUPPORTED_FIELD"
   | "INVALID_SQL_RESPONSE"
-  | "DATABASE_FAILURE";
+  | "DATABASE_FAILURE"
+  | "NOT_FOUND"
+  | "CANCELLED";
 
 /** Public-safe persistence error; SQL/driver details are not exposed. */
 export class PurchaseWriteRepositoryError extends Error {
@@ -97,6 +99,21 @@ export class PurchaseWriteRepository implements PurchaseWriteRepositoryPort {
     return this.readUpdatedPurchase(id);
   }
 
+  async cancel(id: PurchaseId): Promise<boolean> {
+    validatePurchaseId(id);
+    const rows = await this.call("CALL sp_cancelar_compra(?)", [id]);
+    const returnedId = readReturnedId(rows);
+    if (
+      returnedId !== id ||
+      rows[0]?.status !== "CANCELADA" ||
+      rows[0]?.cancelada_em === null ||
+      rows[0]?.cancelada_em === undefined
+    ) {
+      throw this.invalidSqlResponse();
+    }
+    return true;
+  }
+
   private async call(
     sql: string,
     parameters: readonly unknown[],
@@ -108,6 +125,21 @@ export class PurchaseWriteRepository implements PurchaseWriteRepositoryPort {
         throw new PurchaseWriteRepositoryError(
           "DATABASE_FAILURE",
           error.message,
+        );
+      }
+      if (error instanceof Error && error.message === "Compra não encontrada.") {
+        throw new PurchaseWriteRepositoryError(
+          "NOT_FOUND",
+          "Compra não encontrada.",
+        );
+      }
+      if (
+        error instanceof Error &&
+        error.message === "Compra cancelada não pode ser alterada."
+      ) {
+        throw new PurchaseWriteRepositoryError(
+          "CANCELLED",
+          "Compras canceladas não podem ser alteradas.",
         );
       }
       throw new PurchaseWriteRepositoryError(
@@ -317,7 +349,7 @@ function updateItemList(items: unknown): readonly PurchaseItemUpdateOperation[] 
   if (!Array.isArray(items)) {
     throw invalidInput("As operações de itens devem ser uma lista.");
   }
-  return items as readonly PurchaseItemInput[];
+  return items as readonly PurchaseItemUpdateOperation[];
 }
 
 function requiredDate(value: unknown): string {

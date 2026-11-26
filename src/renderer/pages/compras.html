@@ -15,7 +15,7 @@
       <header class="d-flex justify-content-between align-items-center mb-3">
         <div>
           <h3 class="mb-0">Compras de materiais</h3>
-          <small class="text-muted">Consulta, cadastro e atualização parcial de compras</small>
+          <small class="text-muted">Consulta, cadastro, atualização e cancelamento lógico de compras</small>
         </div>
         <div class="d-flex gap-2">
           <button id="btnAtualizar" class="btn btn-outline-secondary" type="button">Atualizar</button>
@@ -40,8 +40,8 @@
       </section>
       <div class="table-responsive shadow-sm rounded">
         <table class="table table-striped table-hover align-middle mb-0">
-          <thead><tr><th>Data</th><th>Moeda</th><th>Observações</th><th class="text-end">Ações</th></tr></thead>
-          <tbody id="corpoTabela"><tr><td colspan="4" class="text-center text-muted">Carregando...</td></tr></tbody>
+          <thead><tr><th>Data</th><th>Moeda</th><th>Observações</th><th>Status</th><th class="text-end">Ações</th></tr></thead>
+          <tbody id="corpoTabela"><tr><td colspan="5" class="text-center text-muted">Carregando...</td></tr></tbody>
         </table>
       </div>
     </main>
@@ -55,6 +55,7 @@
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body">
+              <div id="statusCompra" class="mb-3"></div>
               <div id="itensExistentes" class="alert alert-light border d-none">
                 <strong>Itens já registrados — edite quantidade e preço</strong>
                 <ul id="listaItensExistentes" class="list-group mt-2"></ul>
@@ -87,26 +88,28 @@
                 </div>
               </div>
               <hr />
-              <h6>Adicionar itens</h6>
-              <div class="row g-2 align-items-end">
-                <div class="col-md-5">
-                  <label for="campoMaterial" class="form-label">Material ativo</label>
-                  <select id="campoMaterial" class="form-select"></select>
+              <div id="areaAdicionarItens">
+                <h6>Adicionar itens</h6>
+                <div class="row g-2 align-items-end">
+                  <div class="col-md-5">
+                    <label for="campoMaterial" class="form-label">Material ativo</label>
+                    <select id="campoMaterial" class="form-select"></select>
+                  </div>
+                  <div class="col-md-2">
+                    <label for="campoQuantidade" class="form-label">Quantidade</label>
+                    <input id="campoQuantidade" class="form-control" inputmode="decimal" placeholder="1.000" />
+                  </div>
+                  <div class="col-md-3">
+                    <label for="campoPreco" class="form-label">Preço unitário</label>
+                    <input id="campoPreco" class="form-control" inputmode="decimal" placeholder="0.0000" />
+                  </div>
+                  <div class="col-md-2">
+                    <button id="btnAdicionarItem" class="btn btn-outline-primary w-100" type="button">Adicionar</button>
+                  </div>
                 </div>
-                <div class="col-md-2">
-                  <label for="campoQuantidade" class="form-label">Quantidade</label>
-                  <input id="campoQuantidade" class="form-control" inputmode="decimal" placeholder="1.000" />
-                </div>
-                <div class="col-md-3">
-                  <label for="campoPreco" class="form-label">Preço unitário</label>
-                  <input id="campoPreco" class="form-control" inputmode="decimal" placeholder="0.0000" />
-                </div>
-                <div class="col-md-2">
-                  <button id="btnAdicionarItem" class="btn btn-outline-primary w-100" type="button">Adicionar</button>
-                </div>
+                <small class="text-muted">Use ponto decimal. A quantidade aceita até 3 casas e o preço até 4.</small>
+                <ul id="listaItensNovos" class="list-group mt-3"></ul>
               </div>
-              <small class="text-muted">Use ponto decimal. A quantidade aceita até 3 casas e o preço até 4.</small>
-              <ul id="listaItensNovos" class="list-group mt-3"></ul>
               <div id="erroFormulario" class="alert alert-danger py-2 mt-3 d-none"></div>
             </div>
             <div class="modal-footer">

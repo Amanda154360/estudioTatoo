@@ -80,7 +80,7 @@ function renderizar(): void {
   if (compras.length === 0) {
     const linha = document.createElement('tr');
     const celula = criarCelula('Nenhuma compra encontrada.', 'text-center text-muted');
-    celula.colSpan = 4;
+    celula.colSpan = 5;
     linha.append(celula);
     corpoTabela.append(linha);
     return;
@@ -93,9 +93,27 @@ function renderizar(): void {
       criarCelula(compra.currency ?? '—'),
       criarCelula(compra.notes ?? '—'),
     );
+    const statusCell = criarCelula('');
+    const badge = document.createElement('span');
+    badge.className = `badge ${compra.status === 'CANCELADA' ? 'bg-secondary' : 'bg-success'}`;
+    badge.textContent = compra.status;
+    statusCell.append(badge);
+    linha.append(statusCell);
     const acoes = document.createElement('td');
     acoes.className = 'text-end';
-    acoes.append(criarBotao('Consultar / editar', 'btn btn-sm btn-primary', () => void abrirCompra(compra.id)));
+    const cancelada = compra.status === 'CANCELADA';
+    acoes.append(criarBotao(
+      cancelada ? 'Consultar' : 'Consultar / editar',
+      'btn btn-sm btn-primary me-1',
+      () => void abrirCompra(compra.id),
+    ));
+    if (!cancelada) {
+      acoes.append(criarBotao(
+        'Cancelar compra',
+        'btn btn-sm btn-outline-danger',
+        () => void cancelarCompra(compra.id),
+      ));
+    }
     linha.append(acoes);
     corpoTabela.append(linha);
   }
@@ -132,7 +150,7 @@ function renderizarItensNovos(): void {
   });
 }
 
-function renderizarItensExistentes(): void {
+function renderizarItensExistentes(somenteLeitura: boolean): void {
   listaItensExistentes.replaceChildren();
   for (const item of itensExistentes) {
     const linha = document.createElement('li');
@@ -146,8 +164,8 @@ function renderizarItensExistentes(): void {
     const campos = document.createElement('div');
     campos.className = 'row g-2';
     campos.append(
-      criarCampoItemExistente(item, 'quantity', 'Quantidade', '3'),
-      criarCampoItemExistente(item, 'amount', 'Preço unitário', '4'),
+      criarCampoItemExistente(item, 'quantity', 'Quantidade', 3, somenteLeitura),
+      criarCampoItemExistente(item, 'amount', 'Preço unitário', 4, somenteLeitura),
     );
     linha.append(campos);
     listaItensExistentes.append(linha);
@@ -158,7 +176,8 @@ function criarCampoItemExistente(
   item: ItemExistenteRascunho,
   campo: 'quantity' | 'amount',
   rotulo: string,
-  casasDecimais: string,
+  casasDecimais: number,
+  somenteLeitura: boolean,
 ): HTMLDivElement {
   const coluna = document.createElement('div');
   coluna.className = 'col-sm-6';
@@ -170,10 +189,11 @@ function criarCampoItemExistente(
   input.inputMode = 'decimal';
   input.className = 'form-control form-control-sm';
   input.value = campo === 'quantity' ? item.quantity : item.amount;
+  input.disabled = somenteLeitura;
   input.dataset.itemId = String(item.id);
   input.dataset.itemField = campo;
   input.setAttribute('aria-label', `${rotulo} do item ${item.id}`);
-  input.placeholder = `0.${'0'.repeat(Number(casasDecimais))}`;
+  input.placeholder = `0.${'0'.repeat(casasDecimais)}`;
   label.htmlFor = `item-${item.id}-${campo}`;
   input.id = label.htmlFor;
   coluna.append(label, input);
@@ -182,6 +202,7 @@ function criarCampoItemExistente(
 
 function abrirFormulario(compra: CompraDetalhada | null): void {
   compraEmEdicao = compra;
+  const cancelada = compra?.status === 'CANCELADA';
   itensNovos = [];
   itensExistentes = (compra?.items ?? []).map((item) => ({
     id: item.id,
@@ -190,19 +211,35 @@ function abrirFormulario(compra: CompraDetalhada | null): void {
     amount: item.unitPrice.amount,
   }));
   exigirElemento<HTMLHeadingElement>('#tituloModal').textContent =
-    compra ? `Compra #${compra.id} — atualização parcial` : 'Nova compra';
-  exigirElemento<HTMLInputElement>('#campoData').value =
-    compra?.date ?? dataLocalHoje();
+    cancelada
+      ? `Compra #${compra.id} — CANCELADA (consulta)`
+      : compra ? `Compra #${compra.id} — atualização parcial` : 'Nova compra';
+  const campoData = exigirElemento<HTMLInputElement>('#campoData');
+  campoData.value = compra?.date ?? dataLocalHoje();
+  campoData.disabled = cancelada;
   campoMoeda.value = compra?.currency ?? 'BRL';
   campoMoeda.disabled = compra !== null;
-  exigirElemento<HTMLTextAreaElement>('#campoObservacoes').value = compra?.notes ?? '';
+  const campoObservacoes = exigirElemento<HTMLTextAreaElement>('#campoObservacoes');
+  campoObservacoes.value = compra?.notes ?? '';
+  campoObservacoes.disabled = cancelada;
+  const statusCompra = exigirElemento<HTMLDivElement>('#statusCompra');
+  statusCompra.replaceChildren();
+  if (compra) {
+    const badge = document.createElement('span');
+    badge.className = `badge ${cancelada ? 'bg-secondary' : 'bg-success'}`;
+    badge.textContent = `Status: ${compra.status}`;
+    statusCompra.append(badge);
+  }
   const existentes = exigirElemento<HTMLDivElement>('#itensExistentes');
   if (itensExistentes.length > 0) {
     existentes.classList.remove('d-none');
   } else {
     existentes.classList.add('d-none');
   }
-  renderizarItensExistentes();
+  renderizarItensExistentes(cancelada);
+  exigirElemento<HTMLDivElement>('#areaAdicionarItens').classList.toggle('d-none', cancelada);
+  btnSalvar.classList.toggle('d-none', cancelada);
+  btnSalvar.disabled = cancelada;
   exigirElemento<HTMLInputElement>('#campoQuantidade').value = '';
   exigirElemento<HTMLInputElement>('#campoPreco').value = '';
   renderizarItensNovos();
@@ -257,10 +294,25 @@ async function abrirCompra(id: number): Promise<void> {
       await carregar();
       return;
     }
-    await carregarMateriais();
+    if (compra.status === 'ATIVA') await carregarMateriais();
     abrirFormulario(compra);
   } catch (erro) {
     mostrarAviso(mensagemDeErro(erro, 'Não foi possível consultar a compra.'), 'erro');
+  }
+}
+
+async function cancelarCompra(id: number): Promise<void> {
+  const confirmado = window.confirm(
+    `Confirma o cancelamento lógico da compra #${id}? A compra e seus itens serão preservados.`,
+  );
+  if (!confirmado) return;
+
+  try {
+    await window.api.cancelarCompra(id);
+    mostrarAviso(`Compra #${id} cancelada. O histórico e os itens foram preservados.`, 'sucesso');
+    await carregar();
+  } catch (erro) {
+    mostrarAviso(mensagemDeErro(erro, 'Não foi possível cancelar a compra.'), 'erro');
   }
 }
 
@@ -291,6 +343,9 @@ form.addEventListener('submit', async (evento) => {
   const itemsNovos = montarItensNovos();
   try {
     if (compraEmEdicao) {
+      if (compraEmEdicao.status === 'CANCELADA') {
+        throw new Error('Compras canceladas não podem ser alteradas.');
+      }
       const items = montarOperacoesItens();
       await window.api.atualizarCompra({
         id: compraEmEdicao.id,

@@ -60,6 +60,7 @@ function listRow(overrides: Partial<ProcedureRow> = {}): ProcedureRow {
     id: 4,
     data_compra: "2025-01-16",
     moeda: "BRL",
+    status: "ATIVA",
     observacoes: "Reposição",
     cotacao_valor: "5.1234567890",
     ...overrides,
@@ -73,6 +74,7 @@ function detailRow(
     compra_id: 4,
     compra_data_compra: "2025-01-16",
     compra_moeda: "BRL",
+    compra_status: "ATIVA",
     compra_observacoes: "Reposição",
     compra_cotacao_moeda_base: null,
     compra_cotacao_moeda_destino: null,
@@ -110,6 +112,7 @@ async function runTests(): Promise<void> {
     through: "2025-01-31" as DateOnly,
   });
   assert(listed.length === 2, "listagem com várias compras");
+  assert(listed[0]?.status === "ATIVA", "listagem mapeia status da compra");
   assert(listed[1]?.date === "2025-01-17", "DATE em Date deve preservar calendário local");
   assert(
     listExecutor.calls[1]?.sql === "CALL sp_listar_compras(?, ?)",
@@ -161,6 +164,12 @@ async function runTests(): Promise<void> {
   assert(oneItem?.items?.[0]?.unit === "ml", "snapshot de unidade preservado");
   assert(oneItem?.items?.[0]?.unitPrice.amount === "18.7500", "DECIMAL de preço preservado como string");
   assert(oneItem?.items?.[0]?.unitPrice.currency === "BRL", "moeda do item derivada do cabeçalho");
+
+  const canceledDetailExecutor = new FakeProcedureExecutor([
+    { rows: [detailRow({ compra_status: "CANCELADA" })] },
+  ]);
+  const canceled = await new PurchaseReadRepository(canceledDetailExecutor).findById(4 as PurchaseId);
+  assert(canceled?.status === "CANCELADA", "compra cancelada segue disponível para consulta");
 
   const multipleItemsExecutor = new FakeProcedureExecutor([
     {

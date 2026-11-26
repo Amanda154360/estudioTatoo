@@ -16,6 +16,7 @@ BEGIN
   DECLARE v_data_texto VARCHAR(32);
   DECLARE v_observacoes TEXT;
   DECLARE v_moeda_compra VARCHAR(3);
+  DECLARE v_status_compra VARCHAR(10);
   DECLARE v_total_itens INT DEFAULT 0;
   DECLARE v_indice INT DEFAULT 0;
   DECLARE v_indice_anterior INT DEFAULT 0;
@@ -72,8 +73,8 @@ BEGIN
   START TRANSACTION;
 
   SET v_encontrado = 1;
-  SELECT c.data_compra, c.observacoes, c.moeda
-    INTO v_data_compra, v_observacoes, v_moeda_compra
+  SELECT c.data_compra, c.observacoes, c.moeda, c.status
+    INTO v_data_compra, v_observacoes, v_moeda_compra, v_status_compra
   FROM compras AS c
   WHERE c.id = p_id
   FOR UPDATE;
@@ -81,6 +82,10 @@ BEGIN
   IF v_encontrado = 0 THEN
     SIGNAL SQLSTATE '45000'
       SET MESSAGE_TEXT = 'Compra não encontrada.';
+  END IF;
+  IF v_status_compra = 'CANCELADA' THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Compra cancelada não pode ser alterada.';
   END IF;
   SET v_moeda_compra = UPPER(TRIM(v_moeda_compra));
 

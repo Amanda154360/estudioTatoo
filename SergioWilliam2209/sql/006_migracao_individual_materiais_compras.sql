@@ -12,3 +12,4 @@ SOURCE SergioWilliam2209/sql/002_procedures_materiais.sql;
 SOURCE SergioWilliam2209/sql/003_procedures_compras.sql;
 SOURCE SergioWilliam2209/sql/004_procedure_criar_compra.sql;
 SOURCE SergioWilliam2209/sql/005_procedure_atualizar_compra.sql;
+SOURCE SergioWilliam2209/sql/007_procedure_cancelar_compra.sql;

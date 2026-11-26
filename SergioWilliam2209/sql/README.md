@@ -1,17 +1,17 @@
 # Migração individual SQL de materiais e compras
 
-`006_migracao_individual_materiais_compras.sql` é o ponto de entrada da migração incremental individual. Ele aplica, nesta ordem, os scripts 001–005 no schema já selecionado pelo cliente MySQL. Não foi executado nesta atividade.
+`006_migracao_individual_materiais_compras.sql` é o ponto de entrada de uma instalação nova e aplica os scripts individuais de materiais e compras, incluindo `007_procedure_cancelar_compra.sql`. Não foi executado nesta atividade.
 
-O pacote cria exclusivamente `materiais`, `compras` e `itens_compra`, além das procedures individuais nomeadas nos scripts 002–005. Não cria banco, não seleciona schema, não altera tabelas, views, triggers ou procedures existentes, e não contém `DROP TABLE`, `TRUNCATE` ou `CREATE OR REPLACE`. `CREATE TABLE`/`CREATE PROCEDURE` sem `IF NOT EXISTS` falham se o nome já existir, evitando ocultar um conflito ou substituir objetos.
+O pacote de instalação nova cria exclusivamente `materiais`, `compras` e `itens_compra`, além das procedures individuais. `compras.status` inicia como `ATIVA` e `cancelada_em` como `NULL`. A migração incremental para schema que já possui a versão anterior está documentada abaixo.
 
 A autorização coletiva comunicada para esta atividade cobre a criação das três tabelas, não a aprovação de todas as regras de negócio codificadas nas procedures. As condições já presentes nos scripts (por exemplo, material ativo, limites de itens, validação de quantidades e compatibilidade de moeda) foram preservadas como regras provisórias; valide-as com o grupo antes de aplicar a migração.
 
 ## Uso controlado
 
-1. Em um ambiente isolado, confirme que o schema de destino está selecionado e que os nomes `materiais`, `compras`, `itens_compra` e as procedures `sp_listar_materiais`, `sp_buscar_material_por_id`, `sp_cadastrar_material`, `sp_atualizar_material`, `sp_excluir_material`, `sp_listar_compras`, `sp_buscar_compra_por_id`, `sp_criar_compra_com_itens` e `sp_atualizar_compra_com_itens` não existem. Se qualquer um existir, interrompa e compare a definição antes de prosseguir.
+1. Em um ambiente isolado, confirme que o schema de destino está selecionado e faça preflight conforme `sql/tests/README.md`.
 2. Faça a aplicação uma única vez pelo cliente `mysql`, a partir da raiz do repositório, após selecionar o schema autorizado. Exemplo de forma (não executado): `mysql NOME_SCHEMA_AUTORIZADO < SergioWilliam2209/sql/006_migracao_individual_materiais_compras.sql`.
 3. Não use `sql/executar_todos.sql`, `sql/init-db.js` ou outro inicializador coletivo para esta migração. O wrapper usa o comando `SOURCE` do cliente CLI e não é compatível com `mysql2.query()` sem um runner de migrações próprio.
-4. A migração não é reexecutável: DDL MySQL pode confirmar operações implicitamente; se houver falha parcial, pare e inspecione o estado antes de qualquer continuação. Não reaplique o pacote cegamente.
+4. A instalação não é reexecutável: DDL MySQL pode confirmar operações implicitamente; se houver falha parcial, pare e inspecione o estado antes de qualquer continuação. Não reaplique o pacote cegamente.
 
 O esquema coletivo não foi acessado nesta atividade. O SQL versionado em `origin/main` documenta `InnoDB`, `utf8mb4` e `utf8mb4_unicode_ci`, mas não substitui o preflight do schema de destino. Nenhum servidor MySQL isolado estava disponível nesta máquina; a execução real e a compatibilidade com a versão do servidor permanecem pendentes.
 
@@ -19,7 +19,9 @@ O esquema coletivo não foi acessado nesta atividade. O SQL versionado em `origi
 
 - `compras` 1:N `itens_compra`.
 - `materiais` 1:N `itens_compra`; a relação compra–material é N:N via itens.
-- As FKs dos itens usam `ON DELETE RESTRICT` e `ON UPDATE RESTRICT`, preservando referências. A exclusão/cancelamento de compras ainda precisa de política aprovada.
+- As FKs dos itens usam `ON DELETE RESTRICT` e `ON UPDATE RESTRICT`, preservando referências. Compras são canceladas logicamente, nunca apagadas; o status é `CANCELADA` e o instante fica em `cancelada_em`.
+- Repetir o cancelamento de uma compra cancelada retorna sucesso sem alterar `cancelada_em`. Os dados do cabeçalho e os itens permanecem disponíveis para consulta.
+- A procedure de atualização rejeita compras canceladas; a aplicação também desabilita edição e inclusão nessa situação.
 - Não há restrição única por par compra/material: a mesma matéria-prima pode aparecer em linhas distintas, por exemplo, com preços/unidades diferentes.
 - Quantidades e preços unitários usam `DECIMAL`, sem ponto flutuante. `UNSIGNED` impede valores negativos; quantidade zero, escalas, arredondamento e moeda por item precisam de validação nas futuras procedures/serviços.
 - Não é armazenado total redundante; sua regra de cálculo depende da aprovação do domínio.
@@ -37,7 +39,7 @@ Os campos de cotação são opcionais no cabeçalho da compra para preservar tax
 - `PurchaseDto` ainda não possui campos para os snapshots de cotação. O grupo deve aprovar a extensão dos contratos antes do repositório real.
 - `PurchaseItemDto.id` é opcional no contrato, mas a coluna SQL é obrigatória após persistência.
 - `supplierId` existe opcionalmente no contrato TypeScript, mas não há tabela de fornecedores nem FK neste rascunho. Decidir se será removido/deferido, armazenado como snapshot textual ou suportado por uma entidade própria.
-- Campos e regras ainda a aprovar: unidade/categoria de material, status/estado da compra, compras sem itens, alterações após registro, exclusões e eventual estoque.
+- Campos e regras ainda a aprovar: unidade/categoria de material, compras sem itens, alterações após registro, exclusões físicas e eventual estoque. O status/cancelamento lógico descrito aqui foi implementado como regra desta etapa individual; aprovação da integração coletiva continua pendente.
 
 ## Integração e execução
 
@@ -45,7 +47,76 @@ O inicializador coletivo mantém uma lista fixa em `sql/init-db.js`; esta pasta 
 
 Antes de qualquer aplicação, revisar versão do MySQL, compatibilidade de `DATETIME(3)` e precisão decimal, testar em banco descartável e planejar backup. Não executar este rascunho em banco compartilhado sem aprovação explícita.
 
+## Upgrade de uma instalação anterior — cancelamento lógico
+
+**Esta documentação não é autorização para executar.** Upgrade somente com
+autorização explícita para o schema/servidor individual e janela de manutenção.
+Não execute em `cl205349` nem em servidor compartilhado.
+
+1. Faça backup consistente e **confirme que ele pode ser restaurado**. Guarde
+   também as definições atuais das procedures e registre como restaurar as
+   permissões/definers aplicáveis.
+2. Confirme por canal independente o endpoint, schema, porta e UUID autorizados.
+   Conecte ao schema individual correto. O nome do schema ou o resultado do
+   preflight não provam isolamento.
+3. Rode apenas o preflight de leitura:
+
+   ```bash
+   mysql --database=SCHEMA_INDIVIDUAL_AUTORIZADO < SergioWilliam2209/sql/migrations/001_preflight_cancelamento.sql
+   ```
+
+   Confira **todos** os conjuntos de resultados: tabelas/colunas, estado das
+   colunas novas e existência/definição das procedures. `ROUTINE_DEFINITION`
+   nula/indisponível por falta de permissão significa que a revisão não foi
+   concluída; pare. Só considere elegível o estado `READY ESTRUTURAL`, com as
+   três colunas antigas de upgrade ausentes, as procedures antigas esperadas
+   presentes, `sp_cancelar_compra` ausente e as definições alvo comparadas com
+   os scripts versionados. Estado aplicado, parcial, incompatível ou diferente
+   exige análise e plano próprio; não reaplique.
+4. Confirme a versão e compatibilidade do servidor com os recursos usados
+   (`ENUM`, `DATETIME(3)`, procedures e `DELIMITER`), em ambiente descartável.
+   O preflight é escrito para MySQL e usa `@@server_uuid`; MariaDB e versões
+   diferentes não estão validados.
+5. O wrapper `002_migracao_cancelamento_compras.sql` contém `SOURCE` e foi
+   preparado para **MySQL CLI**, executado da raiz do repositório:
+
+   ```bash
+   mysql --database=SCHEMA_INDIVIDUAL_AUTORIZADO < SergioWilliam2209/sql/migrations/002_migracao_cancelamento_compras.sql
+   ```
+
+   Não use `npm run db:init`, `sql/executar_todos.sql` nem `mysql2.query()`.
+   Não passe `--force`: pare na primeira falha.
+6. **MySQL Workbench:** o wrapper com `SOURCE` não é um script portátil para
+   Workbench. Se CLI não for opção, use uma conexão previamente conferida e
+   execute de forma controlada no editor: primeiro o `ALTER TABLE` isolado;
+   depois, em operações separadas, remova apenas as três procedures após
+   comparar suas definições e execute os blocos `CREATE PROCEDURE` dos arquivos
+   `003`, `005` e `007`. `DELIMITER` é diretiva do cliente, não SQL enviado ao
+   servidor; use o modo de execução de script do Workbench e confira que cada
+   bloco composto é enviado como uma procedure. Valide este fluxo no Workbench
+   e na versão alvo em schema descartável antes de considerar a execução real.
+   Não execute o arquivo inteiro nem selecione comandos às cegas.
+7. MySQL não garante rollback automático de todas as operações DDL. DDL pode
+   confirmar implicitamente; se uma operação falhar após o `ALTER` ou após a
+   remoção de procedures, o schema pode ficar parcialmente atualizado e as
+   rotinas podem ficar indisponíveis. O `ROLLBACK` da procedure não reverte
+   migrações DDL. Pare, preserve os erros/estado e use plano de recuperação
+   baseado no backup restaurável; não tente reexecutar o wrapper cegamente.
+8. Após aplicação aprovada, confira colunas, defaults, definições e permissões
+   das procedures e faça validação funcional controlada. Os testes SQL de
+   `sql/tests/README.md` são para schema descartável; não cancele compras reais
+   para testá-los. Não foram executados nesta alteração.
+
+O upgrade altera somente as duas colunas de `compras` e as procedures
+`sp_listar_compras`, `sp_buscar_compra_por_id` e
+`sp_atualizar_compra_com_itens`, além de criar `sp_cancelar_compra`. A remoção e
+recriação podem interromper temporariamente consultas/atualizações e afetar
+permissões/definers dessas rotinas; confira dependências antes. Nenhuma tabela
+ou item é excluído pelo script.
+
 ## Procedures preliminares de materiais
+
+## Procedimentos e contratos ainda pendentes
 
 `002_procedures_materiais.sql` propõe `sp_listar_materiais`, `sp_buscar_material_por_id`, `sp_cadastrar_material`, `sp_atualizar_material` e `sp_excluir_material`. Cada chamada emite no máximo um conjunto de linhas, formato consumido pelo `ProcedureExecutor` compartilhado.
 
