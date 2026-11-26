@@ -53,6 +53,7 @@ export const CANAIS = {
   compraBuscar: 'compra:buscar',
   compraCriar: 'compra:criar',
   compraAtualizar: 'compra:atualizar',
+  compraCancelar: 'compra:cancelar',
   cotacaoDolarConsultar: 'cotacao:dolar:consultar',
   cepConsultarEndereco: 'cep:consultarEndereco',
 } as const;
@@ -110,6 +111,7 @@ export interface ApiEstudio {
   buscarCompra(id: number): Promise<CompraDetalhada | null>;
   criarCompra(dados: CriarCompra): Promise<Compra>;
   atualizarCompra(dados: AtualizarCompra): Promise<Compra | null>;
+  cancelarCompra(id: number): Promise<boolean>;
   consultarCotacaoDolar(lado: ExchangeRateSide): Promise<ExchangeRateQuoteResult>;
 
   // Sistema

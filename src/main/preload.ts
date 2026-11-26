@@ -75,6 +75,7 @@ const api: ApiEstudio = {
   buscarCompra: (id) => ipcRenderer.invoke(CANAIS.compraBuscar, id),
   criarCompra: (dados) => ipcRenderer.invoke(CANAIS.compraCriar, dados),
   atualizarCompra: (dados) => ipcRenderer.invoke(CANAIS.compraAtualizar, dados),
+  cancelarCompra: (id) => ipcRenderer.invoke(CANAIS.compraCancelar, id),
   consultarCotacaoDolar: (lado) =>
     ipcRenderer.invoke(CANAIS.cotacaoDolarConsultar, lado),
 

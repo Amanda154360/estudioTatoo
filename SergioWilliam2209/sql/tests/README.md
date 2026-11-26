@@ -1,48 +1,56 @@
 # Testes SQL isolados — materiais e compras
 
-Estes scripts foram preparados, **mas não executados**. Não substituem os 125
-testes simulados e ainda precisam ser validados num MySQL real.
+Estes scripts são material de validação manual, **não foram executados**. Não
+substituem os testes simulados/automatizados e precisam ser validados em um
+MySQL descartável compatível antes de qualquer integração.
 
 ## Pré-condições obrigatórias
 
-1. Disponibilizar um MySQL **isolado e descartável**, de preferência MySQL
-   8.0.32, sem configuração de rede/credenciais compartilhadas.
-2. Criar/provisionar fora destes scripts um schema de teste cujo nome comece
-   com `dad_test_`. Não apontar para `cl205349`.
-3. Executar `007_preflight_ambiente.sql` primeiro e conferir manualmente que
-   schema/versão estão certos. Comparar servidor, porta e UUID da instância
-   com a identificação fornecida pelo responsável pelo ambiente isolado; o
-   nome `dad_test_*` sozinho **não prova isolamento**. Se não for possível
-   confirmar que o endpoint é descartável e diferente do servidor escolar,
-   parar.
-4. Confirmar que o schema descartável está vazio. Nenhum destes scripts cria
-   ou seleciona schema, instala ferramenta, carrega `.env` ou conecta a servidor.
-5. Aplicar apenas
-   `SergioWilliam2209/sql/006_migracao_individual_materiais_compras.sql`
-   no schema descartável. Não usar `npm run db:init` nem
-   `sql/executar_todos.sql`.
+1. Use uma instância MySQL **isolada e descartável**, provisionada fora destes
+   scripts, com schema cujo nome comece `dad_test_`. Não use `cl205349`,
+   `cl205125` ou servidor escolar/compartilhado.
+2. Confirme com o responsável pelo ambiente que servidor, porta e UUID
+   correspondem à instância descartável. O nome do schema não comprova
+   isolamento.
+3. Execute `007_preflight_ambiente.sql` sozinho e confira schema, versão,
+   hostname, porta e UUID. O conjunto foi escrito tendo MySQL 8.0.32 como
+   referência. Pare se a versão/endereço não corresponder ao ambiente aprovado.
+4. Confirme que o schema descartável está vazio. Os scripts não criam/selecionam
+   schema, não carregam `.env` e não conectam a servidor.
+5. Aplique apenas `SergioWilliam2209/sql/006_migracao_individual_materiais_compras.sql`
+   nesse schema vazio. Não use `npm run db:init`, `sql/executar_todos.sql` nem
+   inicializador coletivo.
 
-## Ordem de execução no schema descartável
+## Ordem de testes no schema descartável
 
-- `008_testes_sucesso.sql`: CRUD lógico de materiais; consulta/listagem de
-  compras; criação de compra com dois itens; DECIMALs de precisão máxima;
-  atualização de cabeçalho e item, inclusão de item, snapshots e FK válida.
-  Todos os indicadores `PASS` são necessários.
-- Execute separadamente `009_teste_rollback_criacao.sql`,
-  `010_teste_rollback_atualizacao.sql`, `011_teste_fk_material.sql` e
-  `012_teste_fk_compra.sql`. **Cada arquivo deve produzir o erro esperado**.
-  Eles não devem ser agrupados numa execução que pare no primeiro erro.
-- `013_verificar_falhas_esperadas.sql`: os indicadores devem confirmar ausência
-  da compra parcialmente criada, rollback completo da atualização e ausência
-  de itens órfãos.
-- `014_teste_exclusao_logica_material.sql`: executa por último; deve desativar o
-  material sem apagar os itens históricos.
-- Ao terminar, descarte o schema de teste por procedimento administrativo
-  separado. Não reaproveite nem execute novamente os scripts sobre um schema
-  que contenha tabelas ou procedures: a migração é intencionalmente não
-  reexecutável.
+1. `008_testes_sucesso.sql`: criação/consulta/atualização, itens e snapshots;
+   todos os indicadores devem ser `PASS`.
+2. Execute **separadamente**, validando o erro esperado em cada chamada:
+   `009_teste_rollback_criacao.sql`, `010_teste_rollback_atualizacao.sql`,
+   `011_teste_fk_material.sql` e `012_teste_fk_compra.sql`.
+3. `013_verificar_falhas_esperadas.sql`: confirme os indicadores de rollback e
+   ausência de órfãos.
+4. Execute `014_teste_exclusao_logica_material.sql` por último entre os testes
+   anteriores.
+5. Execute `015_teste_cancelamento_compra.sql`. Ele cria seu próprio material e
+   compra com marcadores únicos e verifica default `ATIVA`, cancelamento,
+   repetição, timestamp e contagem dos itens.
+6. Na **mesma conexão/sessão SQL** de 015, execute isoladamente
+   `016_teste_bloqueio_edicao_cancelada.sql`. O `CALL` deve falhar com
+   `Compra cancelada não pode ser alterada.` Se não falhar, pare.
+7. Ainda na mesma sessão, execute `017_verificar_preservacao_compra_cancelada.sql`.
+   O indicador precisa ser `PASS`; ele compara snapshot e contagem reais dos
+   itens salvos por 015, sem presumir cardinalidade fixa.
+8. Execute isoladamente `018_teste_cancelar_compra_inexistente.sql`. Confira
+   primeiro que o resultado mostra `ID_AUSENTE`; o `CALL` deve falhar com
+   `Compra não encontrada.` Se o ID existir, não execute o `CALL`: selecione
+   manualmente um ID positivo ausente no schema descartável.
+9. Execute isoladamente `019_teste_cancelar_compra_id_invalido.sql`. O `CALL`
+   deve falhar com `Identificador de compra inválido.`.
+10. Ao terminar, descarte o schema por procedimento administrativo separado.
+    Não reaproveite os dados/scripts de teste.
 
-Os testes de falha fazem operações inválidas de propósito e dependem de a
-procedure capturar a falha esperada. Se algum `CALL` não retornar erro, ou se
-qualquer indicador der `FAIL`, interrompa e preserve o ambiente para análise.
-Não copie esses scripts para o inicializador coletivo.
+Os testes negativos fazem operações inválidas intencionalmente. Não agrupe
+chamadas que devem falhar num lote que pare na primeira exceção. Se o erro
+esperado não ocorrer ou algum indicador for `FAIL`, pare e preserve o ambiente
+para análise. Nunca copie estes testes para o inicializador coletivo.

@@ -16,4 +16,5 @@ export interface PurchaseRepositoryPort {
   insert(input: CreatePurchaseInput): Promise<PurchaseDto>;
   update(id: PurchaseId, input: UpdatePurchaseInput): Promise<PurchaseDto | null>;
   delete(id: PurchaseId): Promise<boolean>;
+  cancel(id: PurchaseId): Promise<boolean>;
 }

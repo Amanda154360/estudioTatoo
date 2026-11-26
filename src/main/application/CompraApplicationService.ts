@@ -36,4 +36,8 @@ export class CompraApplicationService {
   atualizar(id: number, dados: UpdatePurchaseInput): Promise<PurchaseDto | null> {
     return this.writes.update(id as PurchaseId, dados);
   }
+
+  cancelar(id: number): Promise<boolean> {
+    return this.writes.cancel(id as PurchaseId);
+  }
 }

@@ -43,6 +43,7 @@ class FakeMaterialRepository implements MaterialRepositoryPort {
   async delete() {
     return false;
   }
+
 }
 
 class FakePurchaseRepository implements PurchaseRepositoryPort {
@@ -65,6 +66,10 @@ class FakePurchaseRepository implements PurchaseRepositoryPort {
   async delete() {
     return false;
   }
+
+  async cancel() {
+    return true;
+  }
 }
 
 async function runTests(): Promise<void> {
@@ -82,6 +87,7 @@ async function runTests(): Promise<void> {
   const purchaseRepository: PurchaseRepositoryPort = new FakePurchaseRepository();
   const purchaseRows = await purchaseRepository.findMany();
   assert(purchaseRows.length === 0, "repositório de compras deve ser injetável");
+  assert(await purchaseRepository.cancel(1 as never), "cancelamento deve fazer parte da porta");
 
   console.log("Persistence port tests passed (3 scenarios).");
 }

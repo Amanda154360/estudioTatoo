@@ -69,6 +69,7 @@ function detailRows(
     compra_id: id,
     compra_data_compra: "2026-11-25",
     compra_moeda: "BRL",
+    compra_status: "ATIVA",
     compra_observacoes: "Observação",
   };
   if (itemValues.length === 0) {
@@ -279,6 +280,47 @@ async function runTests(): Promise<void> {
     "reutiliza leitura existente para mapear resposta atualizada",
   );
 
+  const cancelTimestamp = "2026-11-25 11:12:13.123";
+  const cancelExecutor = new FakeProcedureExecutor([
+    [{ id: 31, status: "CANCELADA", cancelada_em: cancelTimestamp }],
+    [{ id: 31, status: "CANCELADA", cancelada_em: cancelTimestamp }],
+  ]);
+  const cancelRepository = new PurchaseWriteRepository(cancelExecutor);
+  assert(await cancelRepository.cancel(31 as PurchaseId), "compra ativa é cancelada");
+  assert(await cancelRepository.cancel(31 as PurchaseId), "cancelamento repetido é sucesso");
+  assert(
+    cancelExecutor.calls.every(
+      (call) =>
+        call.sql === "CALL sp_cancelar_compra(?)" &&
+        call.parameters[0] === 31,
+    ),
+    "cancelamento usa procedure parametrizada e aceita repetição idempotente",
+  );
+  await assertRepositoryError(
+    () => cancelRepository.cancel(0 as PurchaseId),
+    "INVALID_INPUT",
+  );
+  assert(cancelExecutor.calls.length === 2, "ID inválido não chama a procedure");
+
+  const missingPurchaseExecutor = new FakeProcedureExecutor([
+    new Error("Compra não encontrada."),
+  ]);
+  await assertRepositoryError(
+    () => new PurchaseWriteRepository(missingPurchaseExecutor).cancel(404 as PurchaseId),
+    "NOT_FOUND",
+  );
+
+  const canceledUpdateExecutor = new FakeProcedureExecutor([
+    new Error("Compra cancelada não pode ser alterada."),
+  ]);
+  await assertRepositoryError(
+    () => new PurchaseWriteRepository(canceledUpdateExecutor).update(
+      31 as PurchaseId,
+      { notes: "Tentativa de alteração" },
+    ),
+    "CANCELLED",
+  );
+
   const emptyUpdateExecutor = new FakeProcedureExecutor([
     [{ id: 31 }],
     detailRows(31, []),
@@ -300,6 +342,7 @@ async function runTests(): Promise<void> {
       id: 31,
       data_compra: "2026-11-25",
       moeda: "BRL",
+      status: "ATIVA",
       observacoes: null,
     }],
     detailRows(31, []),

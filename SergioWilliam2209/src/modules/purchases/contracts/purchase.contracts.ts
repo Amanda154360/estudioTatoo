@@ -28,6 +28,8 @@ export interface PurchaseItemDto extends PurchaseItemInput {
   readonly id?: PurchaseItemId;
 }
 
+export type PurchaseStatus = "ATIVA" | "CANCELADA";
+
 /** Existing persisted item: only its quantity and unit price are editable. */
 export interface UpdatePurchaseItemInput {
   readonly id: PurchaseItemId;
@@ -58,6 +60,7 @@ export type UpdatePurchaseInput = Omit<Partial<CreatePurchaseInput>, "items"> & 
 
 export interface PurchaseDto {
   readonly id: PurchaseId;
+  readonly status: PurchaseStatus;
   readonly supplierId?: SupplierId;
   readonly date?: DateOnly;
   readonly currency?: CurrencyCode;

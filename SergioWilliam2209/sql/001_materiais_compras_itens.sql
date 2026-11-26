@@ -18,6 +18,8 @@ CREATE TABLE compras (
   id INT AUTO_INCREMENT PRIMARY KEY,
   data_compra DATE NOT NULL,
   moeda CHAR(3) NOT NULL,
+  status ENUM('ATIVA', 'CANCELADA') NOT NULL DEFAULT 'ATIVA',
+  cancelada_em DATETIME(3) NULL,
   observacoes TEXT NULL,
 
   -- Snapshot opcional da cotação efetivamente associada à compra.
