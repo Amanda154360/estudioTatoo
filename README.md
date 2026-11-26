@@ -22,6 +22,10 @@ npm start                  # build (esbuild) + Electron
 - Menu **Estúdio** → *Procedimentos do Estúdio* (`Ctrl+E`) e *Lembretes de
   Atendimento* (`Ctrl+L`).
 
+> **Atenção:** não execute `npm run db:init` em banco compartilhado. Os scripts
+> podem apagar e recriar estruturas e afetar dados existentes. Use somente em
+> ambiente isolado e autorizado.
+
 ### E-mail: teste x produção
 
 A conta do Gemini **não envia e-mail** (é API de LLM). Por isso o envio tem dois
