@@ -15,6 +15,19 @@ export interface ItemCompraInput {
   };
 }
 
+/** Atualiza apenas valores do item persistido; ID e vínculo são preservados. */
+export interface ItemCompraExistenteAtualizacao {
+  readonly id: number;
+  readonly quantity: string;
+  readonly unitPrice: {
+    readonly amount: string;
+  };
+}
+
+export type OperacaoItemCompraAtualizacao =
+  | ItemCompraInput
+  | ItemCompraExistenteAtualizacao;
+
 export interface CriarCompra {
   readonly date: string;
   readonly currency: string;
@@ -26,8 +39,8 @@ export interface AtualizarCompra {
   readonly id: number;
   readonly date?: string;
   readonly notes?: string;
-  /** Sem ID persistido no contrato, itens recebidos são inclusões. */
-  readonly items?: readonly ItemCompraInput[];
+  /** Item com ID atualiza; item sem ID é incluído. Itens omitidos permanecem. */
+  readonly items?: readonly OperacaoItemCompraAtualizacao[];
 }
 
 export interface FiltroCompras {

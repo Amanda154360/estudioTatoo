@@ -28,6 +28,18 @@ export interface PurchaseItemDto extends PurchaseItemInput {
   readonly id?: PurchaseItemId;
 }
 
+/** Existing persisted item: only its quantity and unit price are editable. */
+export interface UpdatePurchaseItemInput {
+  readonly id: PurchaseItemId;
+  readonly quantity: Quantity;
+  readonly unitPrice: Pick<Money, "amount">;
+}
+
+/** Update payload items either edit an existing row or append a new one. */
+export type PurchaseItemUpdateOperation =
+  | UpdatePurchaseItemInput
+  | PurchaseItemInput;
+
 /**
  * Provisional draft. Supplier, date, currency, item cardinality, totals and
  * persistence relationships are intentionally not fixed by this contract.
@@ -40,7 +52,9 @@ export interface CreatePurchaseInput {
   readonly notes?: string;
 }
 
-export type UpdatePurchaseInput = Partial<CreatePurchaseInput>;
+export type UpdatePurchaseInput = Omit<Partial<CreatePurchaseInput>, "items"> & {
+  readonly items?: readonly PurchaseItemUpdateOperation[];
+};
 
 export interface PurchaseDto {
   readonly id: PurchaseId;

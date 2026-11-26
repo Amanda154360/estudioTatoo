@@ -2,6 +2,7 @@ import type {
   CreatePurchaseInput,
   PurchaseDto,
   PurchaseItemInput,
+  PurchaseItemUpdateOperation,
   UpdatePurchaseInput,
 } from "../contracts/purchase.contracts";
 import type { PurchaseId } from "../../../shared/primitives";
@@ -217,9 +218,12 @@ function serializeUpdateInput(input: UpdatePurchaseInput): {
   }
 
   const updateItems = input.items === undefined ? [] : updateItemList(input.items);
-  const items = updateItems.map((item, index) =>
-    serializeNewItem(item, undefined, `items[${index}]`),
-  );
+  const items = updateItems.map((item, index) => {
+    const field = `items[${index}]`;
+    return isRecord(item) && "id" in item
+      ? serializeExistingItem(item, field)
+      : serializeNewItem(item, undefined, field);
+  });
   if (items.length > 100) {
     throw invalidInput("A compra excede o limite aceito pela procedure.");
   }
@@ -227,13 +231,18 @@ function serializeUpdateInput(input: UpdatePurchaseInput): {
 }
 
 function serializeNewItem(
-  item: PurchaseItemInput,
+  value: unknown,
   purchaseCurrency: string | undefined,
   field: string,
 ): CreateItemProcedurePayload {
-  if (!isRecord(item)) {
+  if (!isRecord(value)) {
     throw invalidInput(`O item ${field} é inválido.`);
   }
+  const allowedKeys = new Set(["materialId", "description", "quantity", "unit", "unitPrice"]);
+  if (Object.keys(value).some((key) => !allowedKeys.has(key))) {
+    throw invalidInput(`O item ${field} contém campos não permitidos.`);
+  }
+  const item = value as PurchaseItemInput;
   if (item.description !== undefined || item.unit !== undefined) {
     throw unsupportedField(
       "Descrição e unidade do item são obtidas do cadastro de materiais.",
@@ -268,6 +277,33 @@ function serializeNewItem(
   };
 }
 
+function serializeExistingItem(
+  value: Record<string, unknown>,
+  field: string,
+): UpdateItemProcedurePayload {
+  const allowedKeys = new Set(["id", "quantity", "unitPrice"]);
+  if (Object.keys(value).some((key) => !allowedKeys.has(key))) {
+    throw invalidInput(`A atualização de ${field} contém campos não permitidos.`);
+  }
+  if (!isValidIdentifier(value.id)) {
+    throw invalidInput(`O identificador do item em ${field} é inválido.`);
+  }
+  const quantity = decimalString(value.quantity, QUANTITY_PATTERN, true, field);
+  if (!isRecord(value.unitPrice)) {
+    throw invalidInput(`O preço unitário em ${field} é obrigatório.`);
+  }
+  if (Object.keys(value.unitPrice).some((key) => key !== "amount")) {
+    throw invalidInput(`O preço unitário em ${field} contém campos não permitidos.`);
+  }
+  const amount = decimalString(
+    value.unitPrice.amount,
+    PRICE_PATTERN,
+    false,
+    field,
+  );
+  return { id: value.id, quantidade: quantity, preco_unitario: amount };
+}
+
 function requiredItems(
   items: unknown,
 ): readonly PurchaseItemInput[] {
@@ -277,7 +313,7 @@ function requiredItems(
   return items as readonly PurchaseItemInput[];
 }
 
-function updateItemList(items: unknown): readonly PurchaseItemInput[] {
+function updateItemList(items: unknown): readonly PurchaseItemUpdateOperation[] {
   if (!Array.isArray(items)) {
     throw invalidInput("As operações de itens devem ser uma lista.");
   }

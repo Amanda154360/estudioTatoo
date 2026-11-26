@@ -16,6 +16,32 @@ const itemNovoSchema = z.object({
   }).strict(),
 }).strict();
 
+const itemExistenteAtualizacaoSchema = z.object({
+  id: materialIdSchema,
+  quantity: quantidadeSchema,
+  unitPrice: z.object({
+    amount: precoSchema,
+  }).strict(),
+}).strict();
+
+const operacoesItemAtualizacaoSchema = z.array(
+  z.union([itemExistenteAtualizacaoSchema, itemNovoSchema]),
+).max(100).superRefine((items, context) => {
+  const ids = new Set<number>();
+  items.forEach((item, index) => {
+    if (!('id' in item)) return;
+    if (ids.has(item.id)) {
+      context.addIssue({
+        code: 'custom',
+        path: [index, 'id'],
+        message: 'O mesmo item não pode ser atualizado mais de uma vez.',
+      });
+      return;
+    }
+    ids.add(item.id);
+  });
+});
+
 export const compraIdSchema = materialIdSchema;
 
 export const filtroComprasSchema = z.object({
@@ -38,6 +64,6 @@ export const atualizarCompraSchema = z.object({
   id: compraIdSchema,
   date: dataSchema.optional(),
   notes: z.string().max(65535).optional(),
-  // Sem ID de item no contrato do módulo, os objetos aqui são apenas inclusões.
-  items: z.array(itemNovoSchema).max(100).optional(),
+  // Com ID atualiza quantidade/preço; sem ID acrescenta item novo.
+  items: operacoesItemAtualizacaoSchema.optional(),
 }).strict();

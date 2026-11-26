@@ -82,7 +82,15 @@ test('serviço de compras separa consultas da escrita parcial suportada', async 
   await service.listar({ from: '2026-01-01' });
   assert.equal(await service.buscar(12), null);
   await service.criar({ date: '2026-01-01' });
-  await service.atualizar(12, { notes: 'Revisada' });
+  const operacoesItens = [
+    { id: 71, quantity: '2.500', unitPrice: { amount: '10.2500' } },
+    {
+      materialId: 8,
+      quantity: '1.000',
+      unitPrice: { amount: '4.5000', currency: 'BRL' },
+    },
+  ];
+  await service.atualizar(12, { notes: 'Revisada', items: operacoesItens });
 
   assert.deepEqual(calls.map(({ operation }) => operation), [
     'findMany',
@@ -90,7 +98,7 @@ test('serviço de compras separa consultas da escrita parcial suportada', async 
     'insert',
     'update',
   ]);
-  assert.deepEqual(calls[3]?.args, [12, { notes: 'Revisada' }]);
+  assert.deepEqual(calls[3]?.args, [12, { notes: 'Revisada', items: operacoesItens }]);
 });
 
 test('erro de estrutura individual ausente é claro e não tenta migrar', () => {
