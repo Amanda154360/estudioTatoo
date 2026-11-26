@@ -3,7 +3,11 @@
 
 DELIMITER $$
 
-CREATE PROCEDURE sp_listar_materiais(IN p_termo VARCHAR(120))
+CREATE PROCEDURE sp_listar_materiais(
+    IN p_termo VARCHAR(120)
+       CHARACTER SET utf8mb4
+       COLLATE utf8mb4_unicode_ci
+)
 BEGIN
   SELECT
     m.id,

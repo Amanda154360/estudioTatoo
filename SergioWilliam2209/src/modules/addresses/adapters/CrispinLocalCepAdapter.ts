@@ -56,16 +56,36 @@ export class CrispinLocalCepAdapter implements LocalLookup {
     let response: unknown;
     try {
       response = await this.lookup.buscarCepSql(normalizedPostalCode);
-    } catch {
-      // Never forward database, IPC, filesystem or provider details to callers.
+    } catch (error: unknown) {
+    // Quando a procedure local não existe, permite a consulta ao ViaCEP.
+    const procedureAusente =
+      typeof error === "object" &&
+      error !== null &&
+      (
+        ("code" in error && error.code === "ER_SP_DOES_NOT_EXIST") ||
+        ("errno" in error && error.errno === 1305)
+      );
+
+    if (procedureAusente) {
       return {
-        ok: false,
-        error: {
-          code: "LOOKUP_UNAVAILABLE",
-          message: "Não foi possível consultar o CEP no catálogo local.",
+        ok: true,
+        value: {
+          found: false,
+          source: "local-mysql",
         },
       };
     }
+
+    // Outros erros continuam sendo tratados sem expor detalhes internos.
+    return {
+      ok: false,
+      error: {
+        code: "LOOKUP_UNAVAILABLE",
+        message: "Não foi possível consultar o CEP no catálogo local.",
+      },
+    };
+  }
+
 
     if (response === null) {
       return {

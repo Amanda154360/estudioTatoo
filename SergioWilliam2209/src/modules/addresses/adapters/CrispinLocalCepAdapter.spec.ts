@@ -101,6 +101,63 @@ async function runTests(): Promise<void> {
     "mensagem pública não deve expor erro interno",
   );
 
+
+  // Teste: procedure local ausente (erro MySQL 1305).
+  // Deve permitir que o serviço continue a consulta pelo ViaCEP.
+  const missingProcedureAdapter = new CrispinLocalCepAdapter({
+    async buscarCepSql() {
+      throw Object.assign(new Error("Procedure does not exist"), {
+        code: "ER_SP_DOES_NOT_EXIST",
+        errno: 1305,
+      });
+    },
+  });
+
+  const missingProcedure = await missingProcedureAdapter.lookupLocal({
+    postalCode: "12345678" as PostalCode,
+  });
+
+  assert(
+    missingProcedure.ok,
+    "procedure ausente deve permitir o fallback",
+  );
+  assert(
+    !missingProcedure.value.found,
+    "procedure ausente deve ser tratada como consulta local sem resultado",
+  );
+  assert(
+    missingProcedure.value.source === "local-mysql",
+    "resultado deve manter a origem local-mysql",
+  );
+
+  // Teste: erro de autenticação não pode ser tratado como CEP ausente.
+  const accessDeniedAdapter = new CrispinLocalCepAdapter({
+    async buscarCepSql() {
+      throw Object.assign(new Error("Access denied"), {
+        code: "ER_ACCESS_DENIED_ERROR",
+        errno: 1045,
+      });
+    },
+  });
+
+  const accessDenied = await accessDeniedAdapter.lookupLocal({
+    postalCode: "12345678" as PostalCode,
+  });
+
+  assert(
+    !accessDenied.ok,
+    "erro de autenticação deve interromper a consulta local",
+  );
+  assert(
+    accessDenied.error.code === "LOOKUP_UNAVAILABLE",
+    "erro de autenticação deve ser identificado como indisponibilidade",
+  );
+  assert(
+    !accessDenied.error.message.includes("Access denied"),
+    "mensagem pública não deve expor detalhes internos do banco",
+  );
+
+
   for (const input of ["12345678", "12345-678"]) {
     const inputPort: LocalCepLookupPort = {
       async buscarCepSql(cep) {
@@ -118,7 +175,7 @@ async function runTests(): Promise<void> {
     );
   }
 
-  console.log("CEP adapter tests passed (7 scenarios).");
+  console.log("CEP adapter tests passed (9 scenarios).");
 }
 
 void runTests();
